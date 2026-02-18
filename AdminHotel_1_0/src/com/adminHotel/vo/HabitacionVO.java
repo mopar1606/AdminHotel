@@ -1,49 +1,97 @@
 package com.adminHotel.vo;
 
+import java.math.BigDecimal;
+
 public class HabitacionVO {
 
-    private int idHabitacion;
-    private int numeroHabitacion;
-    private int piso;
-    private String tipo;
-    private String estado;
-    private boolean activa;
+    private Integer idHabitacion;
+    private Integer numeroHabitacion;
+    private Integer piso;
+    private String descripcion;
+    private Integer idTipoHabitacion;
+    private Integer idEstadoHabitacion;
+    private Integer idEstadoRegistro;
+    private String estadoDescripcion;
+    private String tipoDescripcion;
+    private BigDecimal precio; 
+
+    public Integer getIdHabitacion() {
+        return idHabitacion;
+    }
+
+    public void setIdHabitacion(Integer idHabitacion) {
+        this.idHabitacion = idHabitacion;
+    }
+
+    public Integer getNumeroHabitacion() {
+        return numeroHabitacion;
+    }
+
+    public void setNumeroHabitacion(Integer numeroHabitacion) {
+        this.numeroHabitacion = numeroHabitacion;
+    }
+
+    public Integer getPiso() {
+        return piso;
+    }
+
+    public void setPiso(Integer piso) {
+        this.piso = piso;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public Integer getIdTipoHabitacion() {
+        return idTipoHabitacion;
+    }
+
+    public void setIdTipoHabitacion(Integer idTipoHabitacion) {
+        this.idTipoHabitacion = idTipoHabitacion;
+    }
+
+    public Integer getIdEstadoHabitacion() {
+        return idEstadoHabitacion;
+    }
+
+    public void setIdEstadoHabitacion(Integer idEstadoHabitacion) {
+        this.idEstadoHabitacion = idEstadoHabitacion;
+    }
+
+    public Integer getIdEstadoRegistro() {
+        return idEstadoRegistro;
+    }
+
+    public void setIdEstadoRegistro(Integer idEstadoRegistro) {
+        this.idEstadoRegistro = idEstadoRegistro;
+    }
     
-    
-	public int getIdHabitacion() {
-		return idHabitacion;
+    public String getEstadoDescripcion() {
+        return estadoDescripcion;
+    }
+
+    public void setEstadoDescripcion(String estadoDescripcion) {
+        this.estadoDescripcion = estadoDescripcion;
+    }
+
+    public String getTipoDescripcion() {
+        return tipoDescripcion;
+    }
+
+    public void setTipoDescripcion(String tipoDescripcion) {
+        this.tipoDescripcion = tipoDescripcion;
+    }
+
+	public BigDecimal getPrecio() {
+		return precio;
 	}
-	public void setIdHabitacion(int idHabitacion) {
-		this.idHabitacion = idHabitacion;
-	}
-	public int getNumeroHabitacion() {
-		return numeroHabitacion;
-	}
-	public void setNumeroHabitacion(int numeroHabitacion) {
-		this.numeroHabitacion = numeroHabitacion;
-	}
-	public int getPiso() {
-		return piso;
-	}
-	public void setPiso(int piso) {
-		this.piso = piso;
-	}
-	public String getTipo() {
-		return tipo;
-	}
-	public void setTipo(String tipo) {
-		this.tipo = tipo;
-	}
-	public String getEstado() {
-		return estado;
-	}
-	public void setEstado(String estado) {
-		this.estado = estado;
-	}
-	public boolean isActiva() {
-		return activa;
-	}
-	public void setActiva(boolean activa) {
-		this.activa = activa;
+
+	public void setPrecio(BigDecimal precio) {
+		this.precio = precio;
 	}
 }

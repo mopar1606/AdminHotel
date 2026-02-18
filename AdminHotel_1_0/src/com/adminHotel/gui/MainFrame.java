@@ -1,5 +1,8 @@
 package com.adminHotel.gui;
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
+
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -14,7 +17,9 @@ public class MainFrame extends JFrame {
     public MainFrame() {
 
         setTitle("Hotel Management System");
-        setSize(1200, 800);
+        
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(screen.width, screen.height);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
