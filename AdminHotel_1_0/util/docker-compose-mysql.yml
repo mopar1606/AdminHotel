@@ -1,0 +1,24 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-hotel
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: hotel_db
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: hotel_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_hotel_data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: adminer-hotel
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_hotel_data:
