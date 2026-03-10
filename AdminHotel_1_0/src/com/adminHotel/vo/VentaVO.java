@@ -11,6 +11,7 @@ public class VentaVO {
     private BigDecimal total;
     private String observacion;
     private Integer idEstadoRegistro;
+    private Integer idConceptoVenta;
 
     public Integer getIdVenta() {
         return idVenta;
@@ -59,4 +60,12 @@ public class VentaVO {
     public void setIdEstadoRegistro(Integer idEstadoRegistro) {
         this.idEstadoRegistro = idEstadoRegistro;
     }
+
+	public Integer getIdConceptoVenta() {
+		return idConceptoVenta;
+	}
+
+	public void setIdConceptoVenta(Integer idConceptoVenta) {
+		this.idConceptoVenta = idConceptoVenta;
+	}
 }

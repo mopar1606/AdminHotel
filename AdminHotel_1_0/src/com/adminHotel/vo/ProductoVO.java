@@ -10,6 +10,7 @@ public class ProductoVO {
     private BigDecimal precioVenta;
     private Integer stock;
     private Integer idEstadoRegistro;
+    private String codigoBarras;
 
     public Integer getIdProducto() {
         return idProducto;
@@ -58,4 +59,12 @@ public class ProductoVO {
     public void setIdEstadoRegistro(Integer idEstadoRegistro) {
         this.idEstadoRegistro = idEstadoRegistro;
     }
+
+	public String getCodigoBarras() {
+		return codigoBarras;
+	}
+
+	public void setCodigoBarras(String codigoBarras) {
+		this.codigoBarras = codigoBarras;
+	}
 }

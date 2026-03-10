@@ -1,11 +1,9 @@
 package com.adminHotel.dao;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.sql.Types;
 
 import com.adminHotel.vo.VentaVO;
 
@@ -19,24 +17,28 @@ public class VentaDAO {
     
     public int insertar(VentaVO venta) throws Exception {
 
-        String sql = "INSERT INTO venta(id_cliente, fecha, total, observacion, id_estado_registro) "
-                   + "VALUES (?, NOW(), ?, ?, ?)";
+        String sql = "INSERT INTO venta(id_cliente, id_concepto_venta, fecha, total, observacion, id_estado_registro) "
+                   + "VALUES (?, ?, NOW(), ?, ?, ?)";
 
         try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            if (venta.getIdCliente() == null) {
-                ps.setNull(1, Types.INTEGER);
+        	if (venta.getIdCliente() == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
             } else {
                 ps.setInt(1, venta.getIdCliente());
             }
+        	
+        	ps.setInt(2, venta.getIdConceptoVenta());
 
-            if (venta.getTotal() == null) {
-                ps.setBigDecimal(2, BigDecimal.ZERO);
+        	if (venta.getTotal() == null) {
+                ps.setBigDecimal(3, java.math.BigDecimal.ZERO);
             } else {
-                ps.setBigDecimal(2, venta.getTotal());
+                ps.setBigDecimal(3, venta.getTotal());
             }
-            ps.setString(3, venta.getObservacion());
-            ps.setInt(4, 1);
+        	
+        	ps.setString(4, venta.getObservacion());
+        	
+        	ps.setInt(5, 1);
 
             ps.executeUpdate();
 

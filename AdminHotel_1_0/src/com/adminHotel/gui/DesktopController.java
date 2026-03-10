@@ -8,6 +8,8 @@ public class DesktopController {
 
     private static ClienteInternalFrame clienteFrame;
     private static HabitacionInternalFrame habitacionFrame;
+    private static AdminProductosInternalFrame adminProductosFrame;
+    private static VentaMostradorInternalFrame ventaMostradorFrame;
 
     public static void setDesktopPane(JDesktopPane pane) {
         desktopPane = pane;
@@ -30,5 +32,19 @@ public class DesktopController {
         habitacionFrame = new HabitacionInternalFrame();
         desktopPane.add(habitacionFrame);
         habitacionFrame.setVisible(true);
+    }
+    
+    public static void abrirVentaMostrador() {
+        cerrarTodos();
+        ventaMostradorFrame = new VentaMostradorInternalFrame();
+        desktopPane.add(ventaMostradorFrame);
+        ventaMostradorFrame.setVisible(true);
+    }
+    
+    public static void abrirAdminProductos() {
+        cerrarTodos();
+        adminProductosFrame = new AdminProductosInternalFrame();
+        desktopPane.add(adminProductosFrame);
+        adminProductosFrame.setVisible(true);
     }
 }

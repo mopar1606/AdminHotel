@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
+import com.adminHotel.util.EstadoRegistroEnum;
 import com.adminHotel.vo.HabitacionVO;
 import com.adminHotel.vo.VentaVO;
 
@@ -15,10 +16,14 @@ public class VentaDetalleDAO {
         this.cn = cn;
     }
     
-    public void insertarDetalleHabitacion(VentaVO venta, HabitacionVO habitacion) throws Exception {
+    public void insertarDetalleHabitacion(VentaVO venta, HabitacionVO habitacion, Integer noches) throws Exception {
     	
     	if (habitacion.getPrecio() == null) {
-            throw new Exception("La habitación no tiene precio definido");
+            throw new Exception("La habitación no tiene precio definido...");
+        }
+    	
+    	if (noches == null || noches <= 0) {
+            throw new Exception("El número de noches debe ser mayor a cero.");
         }
     	
     	String sql = "INSERT INTO venta_detalle "
@@ -26,18 +31,17 @@ public class VentaDetalleDAO {
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     	BigDecimal precio = habitacion.getPrecio();
-        int cantidad = 1;
-        BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(cantidad));
+        BigDecimal subtotal = precio.multiply(new BigDecimal(noches));
 
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
 
             ps.setInt(1, venta.getIdVenta());
             ps.setString(2, "HABITACION");
             ps.setInt(3, habitacion.getIdHabitacion());
-            ps.setInt(4, cantidad);
+            ps.setInt(4, noches);
             ps.setBigDecimal(5, precio);
             ps.setBigDecimal(6, subtotal);
-            ps.setInt(7, 1);
+            ps.setInt(7, EstadoRegistroEnum.ACTIVO.getCodigo());
 
             ps.executeUpdate();
         }

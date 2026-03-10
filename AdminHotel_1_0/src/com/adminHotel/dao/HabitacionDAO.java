@@ -7,12 +7,10 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.adminHotel.util.EstadoRegistroEnum;
 import com.adminHotel.vo.HabitacionVO;
 
-public class HabitacionDAO {	
-
-    private static final int ESTADO_ACTIVO = 1;
-    private static final int ESTADO_ELIMINADO = 3;
+public class HabitacionDAO {
     
     private Connection cn;
 
@@ -80,7 +78,7 @@ public class HabitacionDAO {
 
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            ps.setInt(1, ESTADO_ELIMINADO);
+            ps.setInt(1, EstadoRegistroEnum.ELIMINADO.getCodigo());
             ps.setInt(2, idHabitacion);
 
             return ps.executeUpdate() > 0;
@@ -128,7 +126,6 @@ public class HabitacionDAO {
         return habitacion;
     }
 
-
     // ===============================
     // LISTAR TODAS
     // ===============================
@@ -142,11 +139,13 @@ public class HabitacionDAO {
         sb.append("h.piso, ");
         sb.append("h.descripcion, ");
         sb.append("h.id_tipo_habitacion, ");
+        sb.append("th.descripcion, ");
         sb.append("h.id_estado_habitacion, ");
         sb.append("h.precio, ");
         sb.append("eh.descripcion AS estado_descripcion ");
         sb.append("FROM habitacion h ");
         sb.append("INNER JOIN estado_habitacion eh ON eh.id_estado_habitacion = h.id_estado_habitacion ");
+        sb.append("INNER JOIN tipo_habitacion th ON th.id_tipo_habitacion = h.id_tipo_habitacion ");
         sb.append("WHERE h.id_estado_registro = 1 ");
         sb.append("ORDER BY h.piso, h.numero_habitacion ");
 
@@ -162,6 +161,7 @@ public class HabitacionDAO {
                    h.setPiso(rs.getInt("piso"));
                    h.setDescripcion(rs.getString("descripcion"));
                    h.setIdTipoHabitacion(rs.getInt("id_tipo_habitacion"));
+                   h.setTipoDescripcion(rs.getString("descripcion"));
                    h.setIdEstadoHabitacion(rs.getInt("id_estado_habitacion"));
                    h.setPrecio(rs.getBigDecimal("precio"));
                    h.setEstadoDescripcion(rs.getString("estado_descripcion"));
@@ -184,7 +184,7 @@ public class HabitacionDAO {
 
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            ps.setInt(1, ESTADO_ACTIVO);
+            ps.setInt(1, EstadoRegistroEnum.ACTIVO.getCodigo());
 
             ResultSet rs = ps.executeQuery();
 
@@ -218,7 +218,7 @@ public class HabitacionDAO {
     // ===============================
     // ACTUALIZAR ESTADO HABITACION
     // ===============================
-    public void actualizarEstado(int idHabitacion, int idEstado) throws Exception {
+    public Integer actualizarEstado(int idHabitacion, int idEstado) throws Exception {
 
         String sql = "UPDATE habitacion SET id_estado_habitacion = ? WHERE id_habitacion = ?";
 
@@ -226,7 +226,7 @@ public class HabitacionDAO {
 
             ps.setInt(1, idEstado);
             ps.setInt(2, idHabitacion);
-            ps.executeUpdate();
+            return ps.executeUpdate();
         }
     }
     
