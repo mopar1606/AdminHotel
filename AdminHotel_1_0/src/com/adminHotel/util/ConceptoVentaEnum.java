@@ -2,7 +2,9 @@ package com.adminHotel.util;
 
 public enum ConceptoVentaEnum {
 	VENTA_HABITACION(1),
-	VENTA_MOSTRADOR(2);
+	VENTA_MOSTRADOR(2),
+	MULTAS(3),
+	SERVICIO(4);
 
     private final int codigo;
 
@@ -20,6 +22,6 @@ public enum ConceptoVentaEnum {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Código inválido: " + codigo);
+        throw new IllegalArgumentException("Cï¿½digo invï¿½lido: " + codigo);
     }
 }

@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: main.Main
+SplashScreen-Image: com/adminHotel/gui/complements/Fondo.png
+Class-Path: .

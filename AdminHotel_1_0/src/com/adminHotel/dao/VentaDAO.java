@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import com.adminHotel.util.EstadoRegistroEnum;
 import com.adminHotel.vo.VentaVO;
 
 public class VentaDAO {
@@ -16,42 +17,42 @@ public class VentaDAO {
     }
     
     public int insertar(VentaVO venta) throws Exception {
-
-        String sql = "INSERT INTO venta(id_cliente, id_concepto_venta, fecha, total, observacion, id_estado_registro) "
-                   + "VALUES (?, ?, NOW(), ?, ?, ?)";
-
+        String sql = "INSERT INTO venta(id_cliente, id_habitacion, id_concepto_venta, fecha, total, observacion, id_estado_registro) "
+                   + "VALUES (?, ?, ?, NOW(), ?, ?, ?)";
         try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-        	if (venta.getIdCliente() == null) {
+            
+            if (venta.getIdCliente() == null) {
                 ps.setNull(1, java.sql.Types.INTEGER);
             } else {
                 ps.setInt(1, venta.getIdCliente());
             }
-        	
-        	ps.setInt(2, venta.getIdConceptoVenta());
-
-        	if (venta.getTotal() == null) {
-                ps.setBigDecimal(3, java.math.BigDecimal.ZERO);
+            
+            if (venta.getIdHabitacion() == null) {
+                ps.setNull(2, java.sql.Types.INTEGER);
             } else {
-                ps.setBigDecimal(3, venta.getTotal());
+                ps.setInt(2, venta.getIdHabitacion());
             }
-        	
-        	ps.setString(4, venta.getObservacion());
-        	
-        	ps.setInt(5, 1);
-
+            
+            // Índices 3 en adelante corregidos en secuencia
+            ps.setInt(3, venta.getIdConceptoVenta());
+            
+            if (venta.getTotal() == null) {
+                ps.setBigDecimal(4, java.math.BigDecimal.ZERO);
+            } else {
+                ps.setBigDecimal(4, venta.getTotal());
+            }
+            
+            ps.setString(5, venta.getObservacion());
+            ps.setInt(6, EstadoRegistroEnum.ACTIVO.getCodigo()); 
+            
             ps.executeUpdate();
-
+            
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
-                    int id = rs.getInt(1);
-                    venta.setIdVenta(id);
-                    return id;
+                    return rs.getInt(1);
                 }
             }
         }
-
-        throw new Exception("No se pudo crear la venta");
+        throw new Exception("No se pudo generar el ID de la Venta.");
     }
-
 }

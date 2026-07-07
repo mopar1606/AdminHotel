@@ -14,6 +14,9 @@ public class HabitacionMovimientoDAO {
         this.cn = cn;
     }
 	
+    // ==========================================
+ 	// REGISTRAR ENTRADA HABITACION
+ 	// ==========================================
 	public Integer registrarEntrada(Integer idHabitacion, Integer idCliente, Integer noches) throws Exception {
 		
 		StringBuffer sb = new StringBuffer();
@@ -40,6 +43,9 @@ public class HabitacionMovimientoDAO {
 	    throw new Exception("No se pudo registrar entrada...");
 	}
 	
+	// ==========================================
+	// REGISTRAR SALIDA DE HABITACION
+	// ==========================================
 	public Integer registrarSalida(Integer idHabitacion) throws Exception {
 
 	    String sql =
@@ -54,5 +60,42 @@ public class HabitacionMovimientoDAO {
 	        return ps.executeUpdate();
 	    }
 	}
-
+	
+	// ==========================================
+	// BUSCAR CLIENTE ACTIVO EN HABITACION
+	// ==========================================
+	public Integer obtenerClienteActivo(Integer idHabitacion) throws Exception {
+	    String sql = "SELECT id_cliente FROM habitacion_movimiento "
+	               + "WHERE id_habitacion = ? AND fecha_salida IS NULL "
+	               + "ORDER BY id_habitacion_movimiento DESC LIMIT 1";
+	    
+	    try (PreparedStatement ps = cn.prepareStatement(sql)) {
+	        ps.setInt(1, idHabitacion);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt("id_cliente");
+	            }
+	        }
+	    }
+	    return null; // Si no hay cliente activo registrado
+	}
+	
+	// ==========================================
+    // OBTENER ID DEL MOVIMIENTO ACTIVO (Para Préstamos)
+    // ==========================================
+    public Integer obtenerMovimientoActivo(Integer idHabitacion) throws Exception {
+        String sql = "SELECT id_habitacion_movimiento FROM habitacion_movimiento "
+                   + "WHERE id_habitacion = ? AND fecha_salida IS NULL "
+                   + "ORDER BY id_habitacion_movimiento DESC LIMIT 1";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idHabitacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id_habitacion_movimiento");
+                }
+            }
+        }
+        return null; // Si no hay movimiento activo registrado
+    }
 }

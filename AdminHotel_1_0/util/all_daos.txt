@@ -1,0 +1,1819 @@
+﻿
+--- CajaDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.CajaVO;
+
+public class CajaDAO {
+	
+    private Connection cn;
+    public CajaDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    public List<CajaVO> listar() throws Exception {
+    	
+        List<CajaVO> lista = new ArrayList<>();
+        String sql = "SELECT id_caja, nombre, id_concepto_venta, id_estado_registro "
+                   + "FROM caja WHERE id_estado_registro = 1";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                CajaVO c = new CajaVO();
+                c.setIdCaja(rs.getInt("id_caja"));
+                c.setNombre(rs.getString("nombre"));
+                c.setIdConceptoVenta(rs.getInt("id_concepto_venta"));
+                c.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                lista.add(c);
+            }
+        }
+        return lista;
+    }
+    
+    public CajaVO buscarPorId(Integer idCaja) throws Exception {
+    	
+        String sql = "SELECT id_caja, nombre, id_concepto_venta, id_estado_registro "
+                   + "FROM caja WHERE id_caja = ?";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    CajaVO c = new CajaVO();
+                    c.setIdCaja(rs.getInt("id_caja"));
+                    c.setNombre(rs.getString("nombre"));
+                    c.setIdConceptoVenta(rs.getInt("id_concepto_venta"));
+                    c.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+--- ClienteDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import com.adminHotel.vo.ClienteVO;
+
+public class ClienteDAO {
+	
+	private Connection cn;
+
+    public ClienteDAO(Connection cn) {
+        this.cn = cn;
+    }
+	
+	public ClienteVO buscarPorDocumento(String documento) throws Exception {
+
+	    String sql = "SELECT * FROM cliente WHERE documento = ? AND id_estado_registro = 1";
+
+	    try (PreparedStatement ps = cn.prepareStatement(sql)) {
+
+	        ps.setString(1, documento);
+
+	        try (ResultSet rs = ps.executeQuery()) {
+
+	            if (rs.next()) {
+	                ClienteVO c = new ClienteVO();
+	                c.setIdCliente(rs.getInt("id_cliente"));
+	                c.setNombre(rs.getString("nombre"));
+	                c.setDocumento(rs.getString("documento"));
+	                c.setTelefono(rs.getString("telefono"));
+	                c.setEmail(rs.getString("email"));
+	                return c;
+	            }
+	        }
+	    }
+
+	    return null;
+	}
+	
+	public int insertar(ClienteVO c) throws Exception {
+
+	    String sql = "INSERT INTO cliente(nombre, documento, telefono, email, id_estado_registro) VALUES (?, ?, ?, ?, 1)";
+
+	    try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+	        ps.setString(1, c.getNombre());
+	        ps.setString(2, c.getDocumento());
+	        ps.setString(3, c.getTelefono());
+	        ps.setString(4, c.getEmail());
+
+	        ps.executeUpdate();
+
+	        ResultSet rs = ps.getGeneratedKeys();
+	        if (rs.next()) {
+	            return rs.getInt(1);
+	        }
+	    }
+
+	    throw new Exception("No se pudo crear cliente");
+	}
+
+}
+
+--- ConceptoVentaDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+public class ConceptoVentaDAO {
+    
+    private Connection cn;
+    public ConceptoVentaDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // ==========================================
+    // OBTENER ID DE CONCEPTO POR NOMBRE (Ej. "MULTAS")
+    // ==========================================
+    public Integer obtenerIdPorNombre(String nombreConcepto) throws Exception {
+        String sql = "SELECT id_concepto_venta FROM concepto_venta WHERE nombre = ?";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, nombreConcepto);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id_concepto_venta");
+                }
+            }
+        }
+        
+        return null;
+    }
+}
+
+--- ConsumibleDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.ConsumibleVO;
+
+public class ConsumibleDAO {
+    
+    private Connection cn;
+    
+    public ConsumibleDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // ===============================
+    // LISTAR TODO CON CONTROL DE INVENTARIO
+    // ===============================
+    public List<ConsumibleVO> listarTodo() throws Exception {
+        List<ConsumibleVO> lista = new ArrayList<>();
+        
+        // Aqu� agregamos c.fecha_compra a la selecci�n de la base de datos
+        String sql = "SELECT c.id_consumible, c.nombre, c.precio_compra, c.precio_multa, c.fecha_compra, c.stock, c.id_estado_registro, c.es_prestable, "
+                   + "IFNULL((SELECT SUM(cantidad_entregada - cantidad_devuelta) FROM prestamo_consumible "
+                   + "WHERE id_consumible = c.id_consumible AND estado = 'PRESTADO'), 0) AS en_habitaciones, "
+                   + "IFNULL((SELECT SUM(cantidad_entregada - cantidad_devuelta) FROM prestamo_consumible "
+                   + "WHERE id_consumible = c.id_consumible AND estado = 'CON_MULTA'), 0) AS perdidos_cobrados "
+                   + "FROM consumible c "
+                   + "WHERE c.id_estado_registro = 1 "
+                   + "ORDER BY c.nombre ASC";
+                   
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+             
+            while (rs.next()) {
+                ConsumibleVO c = new ConsumibleVO();
+                c.setIdConsumible(rs.getInt("id_consumible"));
+                c.setNombre(rs.getString("nombre"));
+                c.setPrecioCompra(rs.getBigDecimal("precio_compra"));
+                c.setPrecioMulta(rs.getBigDecimal("precio_multa"));
+                c.setStock(rs.getInt("stock"));
+                c.setFechaCompra(rs.getDate("fecha_compra"));
+                c.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                
+                c.setEsPrestable(rs.getBoolean("es_prestable"));
+                
+                c.setEnHabitaciones(rs.getInt("en_habitaciones"));
+                c.setPerdidosCobrados(rs.getInt("perdidos_cobrados"));
+                
+                lista.add(c);
+            }
+        }
+        return lista;
+    }
+    
+    // ===============================
+    // LISTAR ACTIVOS CON STOCK (Para Check-In)
+    // ===============================
+    public List<ConsumibleVO> listarActivosParaPrestamo() throws Exception {
+        List<ConsumibleVO> lista = new ArrayList<>();
+        // Solo lista los que tienen stock y que S� son prestables
+        String sql = "SELECT * FROM consumible WHERE id_estado_registro = 1 AND stock > 0 AND es_prestable = TRUE ORDER BY nombre ASC";
+                   
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+             
+            while (rs.next()) {
+                ConsumibleVO c = new ConsumibleVO();
+                c.setIdConsumible(rs.getInt("id_consumible"));
+                c.setNombre(rs.getString("nombre"));
+                c.setPrecioMulta(rs.getBigDecimal("precio_multa"));
+                c.setStock(rs.getInt("stock"));
+                // Leemos si es prestable
+                c.setEsPrestable(rs.getBoolean("es_prestable"));            
+                lista.add(c);
+            }
+        }
+        return lista;
+    }
+    
+    // ===============================
+    // INSERTAR
+    // ===============================
+    public Integer insertar(ConsumibleVO c) throws Exception {
+        String sql = "INSERT INTO consumible (nombre, stock, precio_compra, precio_multa, fecha_compra, es_prestable, id_estado_registro) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, c.getNombre().toUpperCase().trim());
+            ps.setInt(2, c.getStock());
+            ps.setBigDecimal(3, c.getPrecioCompra());
+            ps.setBigDecimal(4, c.getPrecioMulta());
+            if (c.getFechaCompra() != null) {
+                ps.setDate(5, c.getFechaCompra());
+            } else {
+                ps.setNull(5, java.sql.Types.DATE);
+            }
+            ps.setBoolean(6, (c.getEsPrestable() != null) ? c.getEsPrestable() : false);
+            ps.setInt(7, (c.getIdEstadoRegistro() != null) ? c.getIdEstadoRegistro() : 1);
+            
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (e.getErrorCode() == 1062) {
+                    throw new Exception("El producto '" + c.getNombre() + "' ya existe en el sistema.");
+                }
+                throw e;
+            }
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    c.setIdConsumible(id);
+                    return id;
+                }
+            }
+        }
+        throw new Exception("No se pudo registrar el producto.");
+    }
+    
+    // ===============================
+    // ACTUALIZAR
+    // ===============================
+    public boolean actualizar(ConsumibleVO c) throws Exception {
+        String sql = "UPDATE consumible SET nombre = ?, precio_compra = ?, precio_multa = ?, fecha_compra = ?, es_prestable = ? WHERE id_consumible = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, c.getNombre().toUpperCase().trim());
+            ps.setBigDecimal(2, c.getPrecioCompra());
+            ps.setBigDecimal(3, c.getPrecioMulta());
+            if (c.getFechaCompra() != null) {
+                ps.setDate(4, c.getFechaCompra());
+            } else {
+                ps.setNull(4, java.sql.Types.DATE);
+            }
+            ps.setBoolean(5, (c.getEsPrestable() != null) ? c.getEsPrestable() : false);
+            ps.setInt(6, c.getIdConsumible());
+            
+            return ps.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) {
+                throw new Exception("Error: Ya existe otro producto con el nombre '" + c.getNombre() + "'.");
+            }
+            throw e;
+        }
+    }
+    
+    // ===============================
+    // AJUSTAR STOCK (+ o -)
+    // ===============================
+    public void ajustarStock(int idConsumible, int cantidad) throws Exception {
+        String sql = "UPDATE consumible SET stock = stock + ? WHERE id_consumible = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, cantidad);
+            ps.setInt(2, idConsumible);
+            
+            int filasAff = ps.executeUpdate();
+            if (filasAff == 0) {
+                throw new Exception("No hay stock suficiente para el producto ID: " + idConsumible);
+            }
+        }
+    }
+    
+    // ===============================
+    // ELIMINAR LOGICO
+    // ===============================
+    public void eliminar(int idConsumible) throws Exception {
+        String sql = "UPDATE consumible SET id_estado_registro = 3 WHERE id_consumible = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idConsumible);
+            ps.executeUpdate();
+        }
+    }
+    
+    // ===============================
+    // LISTAR ACTIVOS PRESTABLES CON SUS TOTALES (Para panel dinámico)
+    // ===============================
+    public List<ConsumibleVO> listarPrestablesConEstado() throws Exception {
+        List<ConsumibleVO> lista = new ArrayList<>();
+        String sql = "SELECT c.id_consumible, c.nombre, c.stock, "
+                   + "IFNULL((SELECT SUM(cantidad_entregada - cantidad_devuelta) FROM prestamo_consumible "
+                   + "WHERE id_consumible = c.id_consumible AND estado = 'PRESTADO'), 0) AS en_habitaciones "
+                   + "FROM consumible c "
+                   + "WHERE c.id_estado_registro = 1 AND c.es_prestable = TRUE "
+                   + "ORDER BY c.nombre ASC";
+                   
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ConsumibleVO c = new ConsumibleVO();
+                c.setIdConsumible(rs.getInt("id_consumible"));
+                c.setNombre(rs.getString("nombre"));
+                c.setStock(rs.getInt("stock"));
+                c.setEnHabitaciones(rs.getInt("en_habitaciones")); // Rellenamos el total prestado
+                lista.add(c);
+            }
+        }
+        return lista;
+    }
+}
+
+--- GastoCajaDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.GastoCajaVO;
+
+public class GastoCajaDAO {
+	
+    private Connection cn;
+    public GastoCajaDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // Registra un gasto/retiro de efectivo del cajón
+    public Integer insertar(GastoCajaVO gasto) throws Exception {
+    	
+        String sql = "INSERT INTO gasto_caja "
+                   + "(id_turno_caja, id_usuario, concepto, valor, fecha, id_estado_registro) "
+                   + "VALUES (?, ?, ?, ?, NOW(), 1)";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, gasto.getIdTurnoCaja());
+            ps.setInt(2, gasto.getIdUsuario());
+            ps.setString(3, gasto.getConcepto());
+            ps.setBigDecimal(4, gasto.getValor());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        throw new Exception("No se pudo registrar el gasto de caja");
+    }
+    
+    // Lista los gastos de un turno específico (para tirilla de cierre)
+    public List<GastoCajaVO> listarPorTurno(Integer idTurnoCaja) throws Exception {
+    	
+        List<GastoCajaVO> lista = new ArrayList<>();
+        String sql = "SELECT gc.id_gasto, gc.id_turno_caja, gc.id_usuario, "
+                   + "       gc.concepto, gc.valor, gc.fecha, gc.id_estado_registro, "
+                   + "       u.nombre_usuario AS nombre_usuario "
+                   + "FROM gasto_caja gc "
+                   + "INNER JOIN usuario u ON gc.id_usuario = u.id_usuario "
+                   + "WHERE gc.id_turno_caja = ? AND gc.id_estado_registro = 1 "
+                   + "ORDER BY gc.fecha ASC";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idTurnoCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    GastoCajaVO g = new GastoCajaVO();
+                    g.setIdGasto(rs.getInt("id_gasto"));
+                    g.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                    g.setIdUsuario(rs.getInt("id_usuario"));
+                    g.setConcepto(rs.getString("concepto"));
+                    g.setValor(rs.getBigDecimal("valor"));
+                    g.setFecha(rs.getTimestamp("fecha"));
+                    g.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                    g.setNombreUsuario(rs.getString("nombre_usuario"));
+                    lista.add(g);
+                }
+            }
+        }
+        return lista;
+    }
+    
+    // Suma total de gastos de un turno (para calcular monto_esperado al cerrar)
+    public java.math.BigDecimal sumarGastosPorTurno(Integer idTurnoCaja) throws Exception {
+    	
+        String sql = "SELECT COALESCE(SUM(valor), 0) AS total "
+                   + "FROM gasto_caja "
+                   + "WHERE id_turno_caja = ? AND id_estado_registro = 1";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idTurnoCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("total");
+                }
+            }
+        }
+        return java.math.BigDecimal.ZERO;
+    }
+}
+
+--- HabitacionDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.util.EstadoRegistroEnum;
+import com.adminHotel.vo.HabitacionVO;
+
+public class HabitacionDAO {
+    
+    private Connection cn;
+
+    public HabitacionDAO(Connection cn) {
+        this.cn = cn;
+    }
+
+    // ===============================
+    // INSERT
+    // ===============================
+    public boolean insertar(HabitacionVO vo) throws Exception {
+        String sql = "INSERT INTO habitacion "
+                + "(numero_habitacion, piso, descripcion, id_tipo_habitacion, "
+                + "id_estado_habitacion, id_estado_registro, precio_sencilla, precio_doble, precio_tres) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, vo.getNumeroHabitacion());
+            ps.setInt(2, vo.getPiso());
+            ps.setString(3, vo.getDescripcion());
+            ps.setInt(4, vo.getIdTipoHabitacion());
+            ps.setInt(5, vo.getIdEstadoHabitacion());
+            ps.setInt(6, vo.getIdEstadoRegistro());
+            ps.setBigDecimal(7, vo.getPrecioSencilla());
+            ps.setBigDecimal(8, vo.getPrecioDoble());
+            ps.setBigDecimal(9, vo.getPrecioTres());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    // ===============================
+    // UPDATE
+    // ===============================
+    public boolean actualizar(HabitacionVO vo) throws Exception {
+        String sql = "UPDATE habitacion SET "
+                + "numero_habitacion = ?, "
+                + "piso = ?, "
+                + "descripcion = ?, "
+                + "id_tipo_habitacion = ?, "
+                + "id_estado_habitacion = ?, "
+                + "id_estado_registro = ?, "
+                + "precio_sencilla = ?, "
+                + "precio_doble = ?, "
+                + "precio_tres = ? "
+                + "WHERE id_habitacion = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, vo.getNumeroHabitacion());
+            ps.setInt(2, vo.getPiso());
+            ps.setString(3, vo.getDescripcion());
+            ps.setInt(4, vo.getIdTipoHabitacion());
+            ps.setInt(5, vo.getIdEstadoHabitacion());
+            ps.setInt(6, vo.getIdEstadoRegistro());
+            ps.setBigDecimal(7, vo.getPrecioSencilla());
+            ps.setBigDecimal(8, vo.getPrecioDoble());
+            ps.setBigDecimal(9, vo.getPrecioTres());
+            ps.setInt(10, vo.getIdHabitacion());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    // ===============================
+    // DELETE LOGICO
+    // ===============================
+    public boolean eliminar(Integer idHabitacion) throws Exception {
+        String sql = "UPDATE habitacion SET id_estado_registro = ? WHERE id_habitacion = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, EstadoRegistroEnum.ELIMINADO.getCodigo());
+            ps.setInt(2, idHabitacion);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+
+    // ===============================
+    // OBTENER POR ID
+    // ===============================
+    public HabitacionVO buscarPorId(int id) throws Exception {
+        HabitacionVO habitacion = null;
+        StringBuffer sb = new StringBuffer();
+        sb.append("SELECT h.id_habitacion, h.numero_habitacion, h.piso, h.descripcion, ");
+        sb.append("h.precio_sencilla, h.precio_doble, h.precio_tres, ");
+        sb.append("th.descripcion AS tipo_descripcion, ");
+        sb.append("eh.descripcion AS estado_descripcion ");
+        sb.append("FROM habitacion h ");
+        sb.append("LEFT JOIN tipo_habitacion th ON th.id_tipo_habitacion = h.id_tipo_habitacion ");
+        sb.append("LEFT JOIN estado_habitacion eh ON eh.id_estado_habitacion = h.id_estado_habitacion ");
+        sb.append("WHERE h.id_habitacion = ?");
+        try (PreparedStatement ps = cn.prepareStatement(sb.toString())) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    habitacion = new HabitacionVO();
+                    habitacion.setIdHabitacion(rs.getInt("id_habitacion"));
+                    habitacion.setNumeroHabitacion(rs.getInt("numero_habitacion"));
+                    habitacion.setPiso(rs.getInt("piso"));
+                    habitacion.setDescripcion(rs.getString("descripcion"));
+                    habitacion.setPrecioSencilla(rs.getBigDecimal("precio_sencilla"));
+                    habitacion.setPrecioDoble(rs.getBigDecimal("precio_doble"));
+                    habitacion.setPrecioTres(rs.getBigDecimal("precio_tres"));
+                    habitacion.setTipoDescripcion(rs.getString("tipo_descripcion"));
+                    habitacion.setEstadoDescripcion(rs.getString("estado_descripcion"));
+                }
+            }
+        }
+        return habitacion;
+    }
+
+    // ===============================
+    // LISTAR TODAS
+    // ===============================
+    public List<HabitacionVO> listarHabitaciones() throws Exception {
+
+        List<HabitacionVO> lista = new ArrayList<>();
+        
+        StringBuffer sb = new StringBuffer();
+        sb.append("SELECT h.id_habitacion, h.numero_habitacion, h.piso, h.descripcion, ");
+        sb.append("h.id_tipo_habitacion, th.descripcion AS tipo_descripcion, ");
+        sb.append("h.id_estado_habitacion, h.precio_sencilla, h.precio_doble, h.precio_tres, ");
+        sb.append("eh.descripcion AS estado_descripcion ");
+        sb.append("FROM habitacion h ");
+        sb.append("INNER JOIN estado_habitacion eh ON eh.id_estado_habitacion = h.id_estado_habitacion ");
+        sb.append("INNER JOIN tipo_habitacion th ON th.id_tipo_habitacion = h.id_tipo_habitacion ");
+        sb.append("WHERE h.id_estado_registro = 1 ");
+        sb.append("ORDER BY h.piso, h.numero_habitacion");
+        try (PreparedStatement ps = cn.prepareStatement(sb.toString());
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                HabitacionVO h = new HabitacionVO();
+                h.setIdHabitacion(rs.getInt("id_habitacion"));
+                h.setNumeroHabitacion(rs.getInt("numero_habitacion"));
+                h.setPiso(rs.getInt("piso"));
+                h.setDescripcion(rs.getString("descripcion"));
+                h.setIdTipoHabitacion(rs.getInt("id_tipo_habitacion"));
+                h.setTipoDescripcion(rs.getString("tipo_descripcion"));
+                h.setIdEstadoHabitacion(rs.getInt("id_estado_habitacion"));
+                h.setPrecioSencilla(rs.getBigDecimal("precio_sencilla"));
+                h.setPrecioDoble(rs.getBigDecimal("precio_doble"));
+                h.setPrecioTres(rs.getBigDecimal("precio_tres"));
+                h.setEstadoDescripcion(rs.getString("estado_descripcion"));
+                lista.add(h);
+            }
+        }
+        return lista;
+    }
+
+    // ===============================
+    // LISTAR ACTIVAS
+    // ===============================
+    public List<HabitacionVO> listarActivas() throws Exception {
+
+        List<HabitacionVO> lista = new ArrayList<>();
+
+        String sql = "SELECT * FROM habitacion WHERE id_estado_registro = ?";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, EstadoRegistroEnum.ACTIVO.getCodigo());
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                lista.add(mapear(rs));
+            }
+        }
+
+        return lista;
+    }
+
+    // ===============================
+    // MAPEO ResultSet -> VO
+    // ===============================
+    private HabitacionVO mapear(ResultSet rs) throws Exception {
+
+    	HabitacionVO vo = new HabitacionVO();
+        vo.setIdHabitacion(rs.getInt("id_habitacion"));
+        vo.setNumeroHabitacion(rs.getInt("numero_habitacion"));
+        vo.setPiso(rs.getInt("piso"));
+        vo.setDescripcion(rs.getString("descripcion"));
+        vo.setPrecioSencilla(rs.getBigDecimal("precio_sencilla"));
+        vo.setPrecioDoble(rs.getBigDecimal("precio_doble"));
+        vo.setPrecioTres(rs.getBigDecimal("precio_tres"));
+        vo.setIdTipoHabitacion(rs.getInt("id_tipo_habitacion"));
+        vo.setIdEstadoHabitacion(rs.getInt("id_estado_habitacion"));
+        vo.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+
+        return vo;
+    }
+    
+    // ===============================
+    // ACTUALIZAR ESTADO HABITACION
+    // ===============================
+    public Integer actualizarEstado(int idHabitacion, int idEstado) throws Exception {
+
+        String sql = "UPDATE habitacion SET id_estado_habitacion = ? WHERE id_habitacion = ?";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, idEstado);
+            ps.setInt(2, idHabitacion);
+            return ps.executeUpdate();
+        }
+    }
+    
+    // ===============================
+    // OBTENER PRECIO HABITACION
+    // ===============================
+    public BigDecimal[] obtenerPrecioHabitacion(int idHabitacion) throws Exception {
+    	
+    	String sql = "SELECT precio_sencilla, precio_doble, precio_tres FROM habitacion WHERE id_habitacion = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idHabitacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new BigDecimal[]{
+                        rs.getBigDecimal("precio_sencilla"),
+                        rs.getBigDecimal("precio_doble"),
+                        rs.getBigDecimal("precio_tres")
+                    };
+                } else {
+                    throw new Exception("Habitaci�n no encontrada: " + idHabitacion);
+                }
+            }
+        }
+    } 
+}
+
+--- HabitacionMovimientoDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import com.adminHotel.util.EstadoRegistroEnum;
+
+public class HabitacionMovimientoDAO {
+	
+	private Connection cn;
+
+    public HabitacionMovimientoDAO(Connection cn) {
+        this.cn = cn;
+    }
+	
+    // ==========================================
+ 	// REGISTRAR ENTRADA HABITACION
+ 	// ==========================================
+	public Integer registrarEntrada(Integer idHabitacion, Integer idCliente, Integer noches) throws Exception {
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("INSERT INTO habitacion_movimiento (");
+		sb.append("id_habitacion, id_cliente, fecha_entrada, noches, fecha_salida_prevista, id_estado_registro ");
+		sb.append(") ");
+		sb.append("VALUES (?, ?, NOW(), ?, DATE_ADD(NOW(), INTERVAL ? DAY), ?)");
+
+		try (PreparedStatement ps = cn.prepareStatement(sb.toString(), java.sql.Statement.RETURN_GENERATED_KEYS)) {
+
+	    	ps.setInt(1, idHabitacion);
+	        ps.setInt(2, idCliente);
+	        ps.setInt(3, noches);
+	        ps.setInt(4, noches);
+	        ps.setInt(5, EstadoRegistroEnum.ACTIVO.getCodigo());
+
+	        ps.executeUpdate();
+	        
+	        try (ResultSet rs = ps.getGeneratedKeys()) {
+	        	if (rs.next()) return rs.getInt(1);
+	        }
+	    }
+	    
+	    throw new Exception("No se pudo registrar entrada...");
+	}
+	
+	// ==========================================
+	// REGISTRAR SALIDA DE HABITACION
+	// ==========================================
+	public Integer registrarSalida(Integer idHabitacion) throws Exception {
+
+	    String sql =
+	        "UPDATE habitacion_movimiento " +
+	        "SET fecha_salida = NOW() " +
+	        "WHERE id_habitacion = ? " +
+	        "AND fecha_salida IS NULL";
+
+	    try (PreparedStatement ps = cn.prepareStatement(sql)) {
+
+	        ps.setInt(1, idHabitacion);
+	        return ps.executeUpdate();
+	    }
+	}
+	
+	// ==========================================
+	// BUSCAR CLIENTE ACTIVO EN HABITACION
+	// ==========================================
+	public Integer obtenerClienteActivo(Integer idHabitacion) throws Exception {
+	    String sql = "SELECT id_cliente FROM habitacion_movimiento "
+	               + "WHERE id_habitacion = ? AND fecha_salida IS NULL "
+	               + "ORDER BY id_habitacion_movimiento DESC LIMIT 1";
+	    
+	    try (PreparedStatement ps = cn.prepareStatement(sql)) {
+	        ps.setInt(1, idHabitacion);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt("id_cliente");
+	            }
+	        }
+	    }
+	    return null; // Si no hay cliente activo registrado
+	}
+	
+	// ==========================================
+    // OBTENER ID DEL MOVIMIENTO ACTIVO (Para Pr�stamos)
+    // ==========================================
+    public Integer obtenerMovimientoActivo(Integer idHabitacion) throws Exception {
+        String sql = "SELECT id_habitacion_movimiento FROM habitacion_movimiento "
+                   + "WHERE id_habitacion = ? AND fecha_salida IS NULL "
+                   + "ORDER BY id_habitacion_movimiento DESC LIMIT 1";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idHabitacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id_habitacion_movimiento");
+                }
+            }
+        }
+        return null; // Si no hay movimiento activo registrado
+    }
+}
+
+--- PagoDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import com.adminHotel.vo.PagoVO;
+
+public class PagoDAO {
+	
+	private Connection cn;
+
+    public PagoDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    public Integer insertar(PagoVO pago) throws Exception {
+
+        String sql = "INSERT INTO pago(id_venta, id_metodo, valor, id_estado_registro, fecha, id_turno_caja) "
+                   + "VALUES (?, ?, ?, ?, NOW(), ?)";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setInt(1, pago.getIdVenta());
+            ps.setInt(2, pago.getIdMetodo());
+            ps.setBigDecimal(3, pago.getValor());
+            ps.setInt(4, pago.getIdEstadoRegistro());
+
+            if (pago.getIdTurnoCaja() != null) {
+                ps.setInt(5, pago.getIdTurnoCaja());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
+
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+
+        throw new Exception("No se pudo crear el pago");
+    }
+
+}
+
+--- ParametroDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+public class ParametroDAO {
+	
+	private Connection cn;
+	
+    public ParametroDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    /**
+     * Retorna el valor decimal de un par�metro por su clave.
+     * Ejemplo: obtenerValor("TARIFA_PERSONA_ADICIONAL")
+     */
+    public BigDecimal obtenerValor(String clave) throws Exception {
+        String sql = "SELECT valor FROM parametro WHERE clave = ? AND id_estado_registro = 1";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, clave);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("valor");
+                } else {
+                    throw new Exception("Par�metro no encontrado: " + clave);
+                }
+            }
+        }
+    }
+}
+
+--- PrestamoConsumibleDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.PrestamoConsumibleVO;
+
+public class PrestamoConsumibleDAO {
+	
+	private Connection cn;
+	
+    public PrestamoConsumibleDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // ===============================
+    // INSERTAR PRESTAMO (CHECK-IN)
+    // ===============================
+    public void insertar(PrestamoConsumibleVO vo) throws Exception {
+        String sql = "INSERT INTO prestamo_consumible "
+                   + "(id_habitacion_movimiento, id_consumible, cantidad_entregada, estado, id_estado_registro) "
+                   + "VALUES (?, ?, ?, 'PRESTADO', 1)";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, vo.getIdHabitacionMovimiento());
+            ps.setInt(2, vo.getIdConsumible());
+            ps.setInt(3, vo.getCantidadEntregada());
+            ps.executeUpdate();
+        }
+    }
+    
+    // ===============================
+    // ACTUALIZAR PRESTAMO (CHECK-OUT)
+    // ===============================
+    public void actualizarDevolucion(PrestamoConsumibleVO vo) throws Exception {
+        String sql = "UPDATE prestamo_consumible "
+                   + "SET cantidad_devuelta = ?, estado = ? "
+                   + "WHERE id_prestamo = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, vo.getCantidadDevuelta());
+            ps.setString(2, vo.getEstado());
+            ps.setInt(3, vo.getIdPrestamo());
+            ps.executeUpdate();
+        }
+    }
+    
+    // ===============================
+    // LISTAR PRESTAMOS ACTIVOS DE UNA HABITACI�N
+    // ===============================
+    public List<PrestamoConsumibleVO> listarPrestamosActivos(Integer idMovimiento) throws Exception {
+        List<PrestamoConsumibleVO> lista = new ArrayList<>();
+        
+        String sql = "SELECT p.id_prestamo, p.id_habitacion_movimiento, p.id_consumible, "
+                   + "p.cantidad_entregada, p.cantidad_devuelta, p.estado, "
+                   + "c.nombre, c.precio_multa "
+                   + "FROM prestamo_consumible p "
+                   + "INNER JOIN consumible c ON c.id_consumible = p.id_consumible "
+                   + "WHERE p.id_habitacion_movimiento = ? AND p.estado = 'PRESTADO'";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idMovimiento);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PrestamoConsumibleVO vo = new PrestamoConsumibleVO();
+                    vo.setIdPrestamo(rs.getInt("id_prestamo"));
+                    vo.setIdHabitacionMovimiento(rs.getInt("id_habitacion_movimiento"));
+                    vo.setIdConsumible(rs.getInt("id_consumible"));
+                    vo.setCantidadEntregada(rs.getInt("cantidad_entregada"));
+                    vo.setCantidadDevuelta(rs.getInt("cantidad_devuelta"));
+                    vo.setEstado(rs.getString("estado"));
+                    
+                    vo.setNombreConsumible(rs.getString("nombre"));
+                    vo.setPrecioMulta(rs.getBigDecimal("precio_multa"));
+                    
+                    lista.add(vo);
+                }
+            }
+        }
+        return lista;
+    }
+    
+    // ===============================
+    // LISTAR TODOS LOS PRESTAMOS ACTIVOS (PARA CAJA REGISTRADORA)
+    // ===============================
+    public List<PrestamoConsumibleVO> listarTodosLosActivos() throws Exception {
+        List<PrestamoConsumibleVO> lista = new ArrayList<>();
+        String sql = "SELECT p.id_prestamo, p.id_consumible, "
+                   + "p.cantidad_entregada, p.cantidad_devuelta, p.estado, "
+                   + "c.nombre AS nombre_consumible, "
+                   + "h.numero_habitacion "
+                   + "FROM prestamo_consumible p "
+                   + "INNER JOIN consumible c ON c.id_consumible = p.id_consumible "
+                   + "INNER JOIN habitacion_movimiento hm ON hm.id_habitacion_movimiento = p.id_habitacion_movimiento "
+                   + "INNER JOIN habitacion h ON h.id_habitacion = hm.id_habitacion "
+                   + "WHERE p.estado = 'PRESTADO' "
+                   + "ORDER BY h.numero_habitacion";
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            int fila = 1;
+            while (rs.next()) {
+                PrestamoConsumibleVO vo = new PrestamoConsumibleVO();
+                vo.setIdPrestamo(rs.getInt("id_prestamo"));
+                vo.setIdConsumible(rs.getInt("id_consumible"));
+                vo.setCantidadEntregada(rs.getInt("cantidad_entregada"));
+                vo.setCantidadDevuelta(rs.getInt("cantidad_devuelta"));
+                vo.setEstado(rs.getString("estado"));
+                vo.setNombreConsumible(rs.getString("nombre_consumible"));
+                // Reutilizamos idHabitacionMovimiento para pasar el número de habitación al VO
+                vo.setIdHabitacionMovimiento(rs.getInt("numero_habitacion"));
+                lista.add(vo);
+                fila++;
+            }
+        }
+        return lista;
+    }
+}
+
+--- ProductoDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.ProductoVO;
+
+public class ProductoDAO {
+	
+	private Connection cn;
+
+    public ProductoDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // Para llenar el Combo o la Tabla de ventas
+    public List<ProductoVO> listarActivos() throws Exception {
+        List<ProductoVO> lista = new ArrayList<>();
+        String sql = "SELECT id_producto, nombre, precio_venta, stock, codigo_barras FROM producto WHERE id_estado_registro = 1 AND stock > 0";
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ProductoVO p = new ProductoVO();
+                p.setIdProducto(rs.getInt("id_producto"));
+                p.setNombre(rs.getString("nombre"));
+                p.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+                p.setStock(rs.getInt("stock"));
+                p.setCodigoBarras(rs.getString("codigo_barras"));
+                lista.add(p);
+            }
+        }
+        return lista;
+    }
+    
+    // M�TODO CR�TICO: Descontar stock
+    public void descontarStock(int idProducto, int cantidad) throws Exception {
+        String sql = "UPDATE producto SET stock = stock - ? WHERE id_producto = ? AND stock >= ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, cantidad);
+            ps.setInt(2, idProducto);
+            ps.setInt(3, cantidad); // Validaci�n extra para no quedar en negativo
+            
+            int filasAff = ps.executeUpdate();
+            if (filasAff == 0) {
+                throw new Exception("No hay stock suficiente para el producto ID: " + idProducto);
+            }
+        }
+    }
+    
+    //Para insertar un producto nuevo
+    public int insertar(ProductoVO p) throws Exception {
+        // 1. SQL con los campos de tu tabla producto
+        String sql = "INSERT INTO producto (nombre, precio_compra, precio_venta, stock, id_estado_registro, codigo_barras) "
+                   + "VALUES (?, ?, ?, ?, ?, ?)";
+
+        // 2. Usamos RETURN_GENERATED_KEYS para obtener el ID asignado
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+            ps.setString(1, p.getNombre().toUpperCase().trim()); // Normalizamos a may�sculas
+            ps.setBigDecimal(2, p.getPrecioCompra());
+            ps.setBigDecimal(3, p.getPrecioVenta());
+            ps.setInt(4, p.getStock());
+            
+            // id_estado_registro (1 = ACTIVO por defecto)
+            ps.setInt(5, (p.getIdEstadoRegistro() != null) ? p.getIdEstadoRegistro() : 1);
+            
+            ps.setString(6, p.getCodigoBarras());
+
+            // 3. Ejecutar y validar duplicados
+            try {
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                if (e.getErrorCode() == 1062) { // C�digo MySQL para Duplicate Entry
+                    throw new Exception("El producto '" + p.getNombre() + "' ya existe en el sistema.");
+                }
+                throw e;
+            }
+
+            // 4. Retornar el ID generado
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    p.setIdProducto(id);
+                    return id;
+                }
+            }
+        }
+        throw new Exception("No se pudo registrar el producto.");
+    }
+    
+    //Validar producto por nombre
+    public boolean existeProducto(String nombre) throws Exception {
+        String sql = "SELECT COUNT(*) FROM producto WHERE nombre = ?";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, nombre.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Lista todos los productos para la tabla del administrador.
+     * Incluye productos inactivos para que puedan ser reactivados.
+     */
+    public List<ProductoVO> listarTodo() throws Exception {
+        List<ProductoVO> lista = new ArrayList<>();
+        String sql = "SELECT p.*, e.descripcion as estado_nombre " +
+                     "FROM producto p " +
+                     "JOIN estado_registro e ON p.id_estado_registro = e.id_estado_registro " +
+                     "ORDER BY p.nombre ASC";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ProductoVO p = new ProductoVO();
+                p.setIdProducto(rs.getInt("id_producto"));
+                p.setNombre(rs.getString("nombre"));
+                p.setPrecioCompra(rs.getBigDecimal("precio_compra"));
+                p.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+                p.setStock(rs.getInt("stock"));
+                p.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                p.setCodigoBarras(rs.getString("codigo_barras"));
+                // Si tienes un campo String en el VO para el nombre del estado:
+                // p.setEstadoNombre(rs.getString("estado_nombre"));
+                lista.add(p);
+            }
+        }
+        return lista;
+    }
+
+    /**
+     * Actualiza los datos de un producto (Nombre, Precios, Estado).
+     */
+    public boolean actualizar(ProductoVO p) throws Exception {
+        String sql = "UPDATE producto SET nombre = ?, precio_compra = ?, precio_venta = ?, id_estado_registro = ?,  codigo_barras = ?" +
+                     "WHERE id_producto = ?";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, p.getNombre().toUpperCase().trim());
+            ps.setBigDecimal(2, p.getPrecioCompra());
+            ps.setBigDecimal(3, p.getPrecioVenta());
+            ps.setInt(4, p.getIdEstadoRegistro());
+            ps.setString(5, p.getCodigoBarras());
+            ps.setInt(6, p.getIdProducto());
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) {
+                throw new Exception("Error: Ya existe otro producto con el nombre '" + p.getNombre() + "'.");
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Ajuste de Stock (Entrada de Mercanc�a).
+     * Suma la cantidad recibida al stock actual.
+     */
+    public boolean sumarStock(int idProducto, int cantidadRecibida) throws Exception {
+        // SQL que suma al valor actual (at�mico para evitar errores de concurrencia)
+        String sql = "UPDATE producto SET stock = stock + ? WHERE id_producto = ?";
+
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, cantidadRecibida);
+            ps.setInt(2, idProducto);
+
+            return ps.executeUpdate() > 0;
+        }
+    }
+    
+    //Busqueda por codigo de barras desde pistola laser
+    public ProductoVO buscarPorCodigo(String codigo) throws Exception {
+        String sql = "SELECT * FROM producto WHERE codigo_barras = ? AND id_estado_registro = 1";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ProductoVO p = new ProductoVO();
+                    p.setIdProducto(rs.getInt("id_producto"));
+                    p.setNombre(rs.getString("nombre"));
+                    p.setPrecioVenta(rs.getBigDecimal("precio_venta"));
+                    p.setStock(rs.getInt("stock"));
+                    p.setCodigoBarras(rs.getString("codigo_barras"));
+                    return p;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+--- ReciboDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.adminHotel.vo.ReciboVO;
+
+public class ReciboDAO {
+	
+	private Connection cn;
+
+    public ReciboDAO(Connection cn) {
+        this.cn = cn;
+    }
+	
+    // =============================
+	// REGISTRAR RECIBO DE PAGO
+	// =============================
+	public Integer insertarRecibo(ReciboVO recibo) throws Exception {
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("INSERT INTO recibo (");
+		sb.append("id_cliente, ");
+		sb.append("id_Habitacion, ");
+		sb.append("id_Pago, ");
+		sb.append("id_Venta, ");
+		sb.append("id_HabitacionMovimiento, ");
+		sb.append("noches, ");
+		sb.append("fecha_emision) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+		
+		try (PreparedStatement ps = cn.prepareStatement(sb.toString(), Statement.RETURN_GENERATED_KEYS)) {
+	        ps.setInt(1, recibo.getIdCliente());
+	        ps.setInt(2, recibo.getIdHabitacion());
+	        ps.setInt(3, recibo.getIdPago());
+	        ps.setInt(4, recibo.getIdVenta());
+	        ps.setInt(5, recibo.getIdHabitacionMovimiento());
+	        ps.setInt(6, recibo.getNoches());
+	        
+	        ps.executeUpdate();
+	        
+	        try (ResultSet rs = ps.getGeneratedKeys()) {
+	            if (rs.next()) return rs.getInt(1);
+	        }
+	    }
+		
+		throw new Exception("No se pudo registrar recibo...");		
+	}
+	
+	// =============================
+	// CARGAR DATOS PARA IMPRIMIR RECIBO
+	// =============================
+	public Map<String, Object> obtenerDatosParaTicket(Integer idHabitacion) throws Exception {
+		
+		String sql = "SELECT r.id_recibo, c.documento, h.numero_habitacion, r.noches, v.total, r.fecha_emision, vd.precio_unitario as precio " +
+	            "FROM recibo r " +
+	            "JOIN cliente c ON r.id_cliente = c.id_cliente " +
+	            "JOIN habitacion h ON r.id_habitacion = h.id_habitacion " +
+	            "JOIN venta v ON r.id_venta = v.id_venta " +
+	            "JOIN venta_detalle vd ON v.id_venta = vd.id_venta " + 
+	            "WHERE r.id_habitacion = ? AND vd.tipo_item = 'HABITACION' " +
+	            "ORDER BY r.id_recibo DESC LIMIT 1";
+
+	   Map<String, Object> datos = null;
+	
+	   try (PreparedStatement ps = cn.prepareStatement(sql)) {
+	       ps.setInt(1, idHabitacion);
+	
+	       try (ResultSet rs = ps.executeQuery()) {
+	           if (rs.next()) {
+	               datos = new HashMap<>();
+	               datos.put("id_recibo", rs.getInt("id_recibo"));
+	               datos.put("id_cliente", rs.getString("documento"));
+	               datos.put("numero_habitacion", rs.getString("numero_habitacion"));
+	               datos.put("noches", rs.getInt("noches"));
+	               datos.put("total", rs.getBigDecimal("total"));	               
+	               datos.put("fecha_emision", rs.getTimestamp("fecha_emision"));
+	               datos.put("precio", rs.getBigDecimal("precio"));
+	               
+	           }
+	       }
+	   }
+	   return datos;
+	}
+}
+
+--- TurnoCajaDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.TurnoCajaVO;
+
+public class TurnoCajaDAO {
+	
+    private Connection cn;
+    public TurnoCajaDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // Abre un turno nuevo para una caja
+    public Integer abrir(TurnoCajaVO turno) throws Exception {
+        String sql = "INSERT INTO turno_caja "
+                   + "(id_caja, id_usuario, fecha_apertura, base_inicial_efectivo, "
+                   + " observacion_apertura, estado, id_estado_registro) "
+                   + "VALUES (?, ?, NOW(), ?, ?, 'ABIERTA', 1)";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, turno.getIdCaja());
+            ps.setInt(2, turno.getIdUsuario());
+            ps.setBigDecimal(3, turno.getBaseInicialEfectivo());
+            ps.setString(4, turno.getObservacionApertura());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        throw new Exception("No se pudo abrir el turno de caja");
+    }
+    
+    // Cierra el turno: estampa fecha, estado y observacion
+    public void cerrar(TurnoCajaVO turno) throws Exception {
+        String sql = "UPDATE turno_caja SET "
+                   + "fecha_cierre = NOW(), estado = 'CERRADA', "
+                   + "observacion_cierre = ? "
+                   + "WHERE id_turno_caja = ?";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, turno.getObservacionCierre());
+            ps.setInt(2, turno.getIdTurnoCaja());
+            ps.executeUpdate();
+        }
+    }
+    
+    // Busca el turno ABIERTO activo de una caja específica
+    public TurnoCajaVO buscarTurnoAbierto(Integer idCaja) throws Exception {
+        String sql = "SELECT tc.id_turno_caja, tc.id_caja, tc.id_usuario, "
+                   + "       tc.fecha_apertura, tc.base_inicial_efectivo, "
+                   + "       tc.observacion_apertura, tc.estado, tc.id_estado_registro, "
+                   + "       c.nombre AS nombre_caja, u.nombre_usuario AS nombre_usuario "
+                   + "FROM turno_caja tc "
+                   + "INNER JOIN caja c ON tc.id_caja = c.id_caja "
+                   + "INNER JOIN usuario u ON tc.id_usuario = u.id_usuario "
+                   + "WHERE tc.id_caja = ? AND tc.estado = 'ABIERTA'";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    TurnoCajaVO t = new TurnoCajaVO();
+                    t.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                    t.setIdCaja(rs.getInt("id_caja"));
+                    t.setIdUsuario(rs.getInt("id_usuario"));
+                    t.setFechaApertura(rs.getTimestamp("fecha_apertura"));
+                    t.setBaseInicialEfectivo(rs.getBigDecimal("base_inicial_efectivo"));
+                    t.setObservacionApertura(rs.getString("observacion_apertura"));
+                    t.setEstado(rs.getString("estado"));
+                    t.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                    t.setNombreCaja(rs.getString("nombre_caja"));
+                    t.setNombreUsuario(rs.getString("nombre_usuario"));
+                    return t;
+                }
+            }
+        }
+        return null; // null = la caja está cerrada
+    }
+    
+    // Historial de turnos de una caja (para reportes)
+    public List<TurnoCajaVO> listarPorCaja(Integer idCaja) throws Exception {
+        List<TurnoCajaVO> lista = new ArrayList<>();
+        String sql = "SELECT tc.id_turno_caja, tc.id_caja, tc.id_usuario, "
+                   + "       tc.fecha_apertura, tc.fecha_cierre, tc.base_inicial_efectivo, "
+                   + "       tc.estado, tc.observacion_cierre, tc.id_estado_registro, "
+                   + "       c.nombre AS nombre_caja, u.nombre_usuario AS nombre_usuario "
+                   + "FROM turno_caja tc "
+                   + "INNER JOIN caja c ON tc.id_caja = c.id_caja "
+                   + "INNER JOIN usuario u ON tc.id_usuario = u.id_usuario "
+                   + "WHERE tc.id_caja = ? "
+                   + "ORDER BY tc.fecha_apertura DESC";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    TurnoCajaVO t = new TurnoCajaVO();
+                    t.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                    t.setIdCaja(rs.getInt("id_caja"));
+                    t.setIdUsuario(rs.getInt("id_usuario"));
+                    t.setFechaApertura(rs.getTimestamp("fecha_apertura"));
+                    t.setFechaCierre(rs.getTimestamp("fecha_cierre"));
+                    t.setBaseInicialEfectivo(rs.getBigDecimal("base_inicial_efectivo"));
+                    t.setEstado(rs.getString("estado"));
+                    t.setObservacionCierre(rs.getString("observacion_cierre"));
+                    t.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                    t.setNombreCaja(rs.getString("nombre_caja"));
+                    t.setNombreUsuario(rs.getString("nombre_usuario"));
+                    lista.add(t);
+                }
+            }
+        }
+        return lista;
+    }
+    
+    // Agregar en TurnoCajaDAO
+    public TurnoCajaVO buscarTurnoPorId(Integer idTurnoCaja) throws Exception {
+    	
+        String sql = "SELECT tc.*, c.nombre AS nombre_caja, u.nombre_usuario AS nombre_usuario "
+                   + "FROM turno_caja tc "
+                   + "INNER JOIN caja c ON tc.id_caja = c.id_caja "
+                   + "INNER JOIN usuario u ON tc.id_usuario = u.id_usuario "
+                   + "WHERE tc.id_turno_caja = ?";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idTurnoCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    TurnoCajaVO t = new TurnoCajaVO();
+                    t.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                    t.setIdCaja(rs.getInt("id_caja"));
+                    t.setIdUsuario(rs.getInt("id_usuario"));
+                    t.setFechaApertura(rs.getTimestamp("fecha_apertura"));
+                    t.setBaseInicialEfectivo(rs.getBigDecimal("base_inicial_efectivo"));
+                    t.setEstado(rs.getString("estado"));
+                    t.setIdEstadoRegistro(rs.getInt("id_estado_registro"));
+                    t.setNombreCaja(rs.getString("nombre_caja"));
+                    t.setNombreUsuario(rs.getString("nombre_usuario"));
+                    return t;
+                }
+            }
+        }
+        return null;
+    }
+}
+
+--- TurnoCajaDetalleDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.TurnoCajaDetalleVO;
+
+public class TurnoCajaDetalleDAO {
+	
+    private Connection cn;
+    public TurnoCajaDetalleDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // Inserta el detalle de cuadre al momento de cerrar el turno
+    public Integer insertar(TurnoCajaDetalleVO detalle) throws Exception {
+        String sql = "INSERT INTO turno_caja_detalle "
+                   + "(id_turno_caja, id_metodo, total_ingresos, total_egresos, "
+                   + " monto_esperado, monto_real, diferencia) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, detalle.getIdTurnoCaja());
+            ps.setInt(2, detalle.getIdMetodo());
+            ps.setBigDecimal(3, detalle.getTotalIngresos());
+            ps.setBigDecimal(4, detalle.getTotalEgresos());
+            ps.setBigDecimal(5, detalle.getMontoEsperado());
+            ps.setBigDecimal(6, detalle.getMontoReal());
+            ps.setBigDecimal(7, detalle.getDiferencia());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        throw new Exception("No se pudo guardar el detalle del turno");
+    }
+    
+    // Obtiene los detalles de cierre de un turno específico (para tirilla/reporte)
+    public List<TurnoCajaDetalleVO> listarPorTurno(Integer idTurnoCaja) throws Exception {
+    	
+        List<TurnoCajaDetalleVO> lista = new ArrayList<>();
+        String sql = "SELECT tcd.id_turno_detalle, tcd.id_turno_caja, tcd.id_metodo, "
+                   + "       tcd.total_ingresos, tcd.total_egresos, "
+                   + "       tcd.monto_esperado, tcd.monto_real, tcd.diferencia, "
+                   + "       mp.descripcion AS descripcion_metodo "
+                   + "FROM turno_caja_detalle tcd "
+                   + "INNER JOIN metodo_pago mp ON tcd.id_metodo = mp.id_metodo "
+                   + "WHERE tcd.id_turno_caja = ?";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idTurnoCaja);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    TurnoCajaDetalleVO d = new TurnoCajaDetalleVO();
+                    d.setIdTurnoDetalle(rs.getInt("id_turno_detalle"));
+                    d.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                    d.setIdMetodo(rs.getInt("id_metodo"));
+                    d.setTotalIngresos(rs.getBigDecimal("total_ingresos"));
+                    d.setTotalEgresos(rs.getBigDecimal("total_egresos"));
+                    d.setMontoEsperado(rs.getBigDecimal("monto_esperado"));
+                    d.setMontoReal(rs.getBigDecimal("monto_real"));
+                    d.setDiferencia(rs.getBigDecimal("diferencia"));
+                    d.setDescripcionMetodo(rs.getString("descripcion_metodo"));
+                    lista.add(d);
+                }
+            }
+        }
+        return lista;
+    }
+    
+    // Consulta en tiempo real los acumulados del turno activo
+    // Devuelve los 4 cuadrantes de la pantalla de control de caja
+    public List<TurnoCajaDetalleVO> listarAcumuladosPorTurnosAbiertos() throws Exception {
+    	
+        List<TurnoCajaDetalleVO> lista = new ArrayList<>();
+        String sql = "SELECT c.nombre AS nombre_caja, "
+                   + "       mp.descripcion AS descripcion_metodo, "
+                   + "       mp.id_metodo, tc.id_caja, tc.id_turno_caja, "
+                   + "       COALESCE(SUM(p.valor), 0) AS total_ingresos "
+                   + "FROM turno_caja tc "
+                   + "INNER JOIN caja c ON tc.id_caja = c.id_caja "
+                   + "CROSS JOIN metodo_pago mp "
+                   + "LEFT JOIN pago p ON p.id_turno_caja = tc.id_turno_caja "
+                   + "               AND p.id_metodo = mp.id_metodo "
+                   + "               AND p.id_estado_registro = 1 "
+                   + "WHERE tc.estado = 'ABIERTA' "
+                   + "  AND mp.id_estado_registro = 1 "
+                   + "GROUP BY tc.id_turno_caja, tc.id_caja, c.nombre, mp.id_metodo, mp.descripcion "
+                   + "ORDER BY tc.id_caja, mp.id_metodo";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                TurnoCajaDetalleVO d = new TurnoCajaDetalleVO();
+                d.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                d.setIdMetodo(rs.getInt("id_metodo"));
+                d.setTotalIngresos(rs.getBigDecimal("total_ingresos"));
+                d.setNombreCaja(rs.getString("nombre_caja"));
+                d.setDescripcionMetodo(rs.getString("descripcion_metodo"));
+                lista.add(d);
+            }
+        }
+        return lista;
+    }
+    
+    // Consulta en tiempo real las ventas/pagos individuales del turno activo
+    public List<TurnoCajaDetalleVO> listarVentasDetalladasPorTurnosAbiertos() throws Exception {
+        List<TurnoCajaDetalleVO> lista = new ArrayList<>();
+        String sql = "SELECT tc.id_caja, tc.id_turno_caja, c.nombre AS nombre_caja, "
+                   + "       p.id_metodo, p.valor AS total_ingresos, "
+                   + "       v.observacion AS descripcion_metodo "
+                   + "FROM turno_caja tc "
+                   + "INNER JOIN caja c ON tc.id_caja = c.id_caja "
+                   + "INNER JOIN pago p ON p.id_turno_caja = tc.id_turno_caja "
+                   + "INNER JOIN venta v ON p.id_venta = v.id_venta "
+                   + "WHERE tc.estado = 'ABIERTA' "
+                   + "  AND p.id_estado_registro = 1 "
+                   + "ORDER BY p.fecha ASC";
+        
+        try (PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                TurnoCajaDetalleVO d = new TurnoCajaDetalleVO();
+                d.setIdTurnoCaja(rs.getInt("id_turno_caja"));
+                d.setIdMetodo(rs.getInt("id_metodo"));
+                d.setTotalIngresos(rs.getBigDecimal("total_ingresos"));
+                d.setNombreCaja(rs.getString("nombre_caja"));
+                d.setDescripcionMetodo(rs.getString("descripcion_metodo")); // Usamos este campo para la observación de la venta
+                lista.add(d);
+            }
+        }
+        return lista;
+    }
+
+}
+
+--- UsuarioDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.adminHotel.vo.UsuarioVO;
+
+public class UsuarioDAO {
+	
+	private Connection cn;
+
+    public UsuarioDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    public UsuarioVO validar(String user, String pass) throws Exception {
+        // Consultamos el usuario y sus m�dulos permitidos en un solo JOIN
+        String sql = "SELECT u.id_usuario, u.nombre_usuario, u.nombre_completo, m.id_modulo as modulo " +
+                     "FROM usuario u " +
+                     "LEFT JOIN permiso p ON u.id_usuario = p.id_usuario " +
+                     "LEFT JOIN modulo m ON p.id_modulo = m.id_modulo " +
+                     "WHERE u.nombre_usuario = ? AND u.clave = ? AND u.id_estado_registro = 1";
+
+        UsuarioVO usuario = null;
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setString(1, user);
+            ps.setString(2, pass); // Nota: Aqu� deber�as usar HASH en el futuro
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Integer> permisos = new ArrayList<>();
+                while (rs.next()) {
+                    if (usuario == null) {
+                        usuario = new UsuarioVO();
+                        usuario.setIdUsuario(rs.getInt("id_usuario"));
+                        usuario.setUsuario(rs.getString("nombre_usuario"));
+                        usuario.setNombreCompleto(rs.getString("nombre_completo"));
+                    }
+                    if (rs.getString("modulo") != null) {
+                        permisos.add(rs.getInt("modulo"));
+                    }
+                }
+                if (usuario != null) usuario.setPermisos(permisos);
+            }
+        }
+        return usuario;
+    }
+    
+    public void registrarAuditoria(int idUsuario, String evento, String tabla, String descripcion) {
+        String sql = "INSERT INTO auditoria (id_usuario, evento, tabla_afectada, descripcion) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, idUsuario);
+            ps.setString(2, evento);
+            ps.setString(3, tabla);
+            ps.setString(4, descripcion);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error en auditor�a: " + e.getMessage());
+        }
+    }
+}
+
+--- VentaDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+import com.adminHotel.util.EstadoRegistroEnum;
+import com.adminHotel.vo.VentaVO;
+
+public class VentaDAO {
+	
+	private Connection cn;
+
+    public VentaDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    public int insertar(VentaVO venta) throws Exception {
+        String sql = "INSERT INTO venta(id_cliente, id_habitacion, id_concepto_venta, fecha, total, observacion, id_estado_registro) "
+                   + "VALUES (?, ?, ?, NOW(), ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+            if (venta.getIdCliente() == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(1, venta.getIdCliente());
+            }
+            
+            if (venta.getIdHabitacion() == null) {
+                ps.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(2, venta.getIdHabitacion());
+            }
+            
+            // �ndices 3 en adelante corregidos en secuencia
+            ps.setInt(3, venta.getIdConceptoVenta());
+            
+            if (venta.getTotal() == null) {
+                ps.setBigDecimal(4, java.math.BigDecimal.ZERO);
+            } else {
+                ps.setBigDecimal(4, venta.getTotal());
+            }
+            
+            ps.setString(5, venta.getObservacion());
+            ps.setInt(6, EstadoRegistroEnum.ACTIVO.getCodigo()); 
+            
+            ps.executeUpdate();
+            
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        throw new Exception("No se pudo generar el ID de la Venta.");
+    }
+}
+
+--- VentaDetalleDAO.java ---
+
+package com.adminHotel.dao;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+
+import com.adminHotel.util.EstadoRegistroEnum;
+import com.adminHotel.vo.HabitacionVO;
+import com.adminHotel.vo.VentaVO;
+
+public class VentaDetalleDAO {
+	
+	private Connection cn;
+
+    public VentaDetalleDAO(Connection cn) {
+        this.cn = cn;
+    }
+    
+    // ===============================
+    // DETALLE HABITACION (CHECK-IN)
+    // recibe el precio ya resuelto (sencilla o doble) desde OperationService
+    // ===============================
+    public void insertarDetalleHabitacion(VentaVO venta, HabitacionVO habitacion, Integer noches, BigDecimal precioNoche) throws Exception {
+        if (precioNoche == null) {
+            throw new Exception("La habitación no tiene precio definido.");
+        }
+        if (noches == null || noches < 0) {
+            throw new Exception("El número de noches debe ser mayor a cero.");
+        }
+        String sql = "INSERT INTO venta_detalle "
+                + "(id_venta, tipo_item, id_referencia, cantidad, precio_unitario, subtotal, id_estado_registro) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        BigDecimal subtotal = precioNoche.multiply(new BigDecimal(noches));
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, venta.getIdVenta());
+            ps.setString(2, "HABITACION");
+            ps.setInt(3, habitacion.getIdHabitacion());
+            ps.setInt(4, noches);
+            ps.setBigDecimal(5, precioNoche);
+            ps.setBigDecimal(6, subtotal);
+            ps.setInt(7, EstadoRegistroEnum.ACTIVO.getCodigo());
+            ps.executeUpdate();
+        }
+    }
+    
+    // ===============================
+    // DETALLE PERSONA ADICIONAL
+    // ===============================
+    public void insertarDetallePersonaAdicional(VentaVO venta, HabitacionVO habitacion, BigDecimal tarifa) throws Exception {
+        if (tarifa == null) {
+            throw new Exception("La tarifa adicional no est� definida.");
+        }
+        String sql = "INSERT INTO venta_detalle "
+                + "(id_venta, tipo_item, id_referencia, cantidad, precio_unitario, subtotal, id_estado_registro) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = cn.prepareStatement(sql)) {
+            ps.setInt(1, venta.getIdVenta());
+            ps.setString(2, "PERSONA_ADICIONAL");
+            ps.setInt(3, habitacion.getIdHabitacion());
+            ps.setInt(4, 1);
+            ps.setBigDecimal(5, tarifa);
+            ps.setBigDecimal(6, tarifa);
+            ps.setInt(7, EstadoRegistroEnum.ACTIVO.getCodigo());
+            ps.executeUpdate();
+        }
+    }
+    
+ // ===============================
+ // DETALLE PRODUCTO MOSTRADOR
+ // ===============================
+ public void insertarDetalleMostrador(Integer idVenta, Integer idProducto, Integer cantidad, BigDecimal precioUnitario) throws Exception {
+     if (precioUnitario == null) {
+         throw new Exception("El precio del producto no está definido.");
+     }
+     String sql = "INSERT INTO venta_detalle "
+                + "(id_venta, tipo_item, id_referencia, cantidad, precio_unitario, subtotal, id_estado_registro) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+     BigDecimal subtotal = precioUnitario.multiply(new BigDecimal(cantidad));
+     try (PreparedStatement ps = cn.prepareStatement(sql)) {
+         ps.setInt(1, idVenta);
+         ps.setString(2, "PRODUCTO");
+         ps.setInt(3, idProducto);
+         ps.setInt(4, cantidad);
+         ps.setBigDecimal(5, precioUnitario);
+         ps.setBigDecimal(6, subtotal);
+         ps.setInt(7, EstadoRegistroEnum.ACTIVO.getCodigo());
+         ps.executeUpdate();
+     }
+ }
+}

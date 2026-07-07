@@ -1,9 +1,8 @@
-package com.adminHotel.gui;
+ï»¿package com.adminHotel.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -11,9 +10,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
@@ -25,12 +21,21 @@ public class MainFrame extends JFrame {
     
 	private static final long serialVersionUID = -4140128927858159336L;
 	private JDesktopPane desktopPane;
-	private Font fuenteMenu = new Font("Arial", Font.BOLD, 20);
 	private JToolBar toolBar;
 	
 	public MainFrame() {
 		setTitle("IS - HOTEL LAS TERRAZAS II");
-		setExtendedState(JFrame.MAXIMIZED_BOTH);
+		
+		java.awt.GraphicsConfiguration gc = getGraphicsConfiguration();
+	    java.awt.Insets screenInsets = java.awt.Toolkit.getDefaultToolkit().getScreenInsets(gc);
+	    java.awt.Rectangle screenBounds = gc.getBounds();
+	    int width = screenBounds.width - screenInsets.left - screenInsets.right;
+	    int height = screenBounds.height - screenInsets.top - screenInsets.bottom;
+	    
+	    setSize(width, height);
+	    setLocation(screenInsets.left, screenInsets.top);
+	    setExtendedState(JFrame.MAXIMIZED_BOTH);
+		
 	    setDefaultCloseOperation(EXIT_ON_CLOSE);
 	    getContentPane().setLayout(new BorderLayout());
 	    desktopPane = new JDesktopPane();
@@ -44,23 +49,6 @@ public class MainFrame extends JFrame {
 	    this.repaint();
 	}
 
-    /*public MainFrame() {
-
-        setTitle("IS - HOTEL LAS TERRAZAS II ");
-        
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        setSize(screen.width, screen.height);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-
-        desktopPane = new JDesktopPane();
-        setContentPane(desktopPane);
-
-        DesktopController.setDesktopPane(desktopPane);
-
-        setJMenuBar(crearMenu());
-    }*/
-	
 	private JToolBar crearToolBar() {
     	JToolBar tb = new JToolBar();
     	tb.setFloatable(false);
@@ -83,6 +71,24 @@ public class MainFrame extends JFrame {
         	tb.add(crearBoton("INVENTARIO", "/com/adminHotel/gui/complements/inventory.png", e -> abrirInventario()));
         }
 
+        if (SesionUsuario.tienePermiso(ModuloEnum.CONSUMIBLES.getCodigo())) {
+            tb.add(Box.createHorizontalGlue());
+            tb.add(crearBoton("CONSUMIBLES", "/com/adminHotel/gui/complements/consumables.png", e -> abrirConsumibles()));
+        }
+        
+        tb.add(Box.createHorizontalGlue());
+        tb.add(crearBoton("BOX", "/com/adminHotel/gui/complements/box.png", e -> abrirCajaRegistradora()));
+        
+        if (SesionUsuario.tienePermiso(ModuloEnum.REPORTS.getCodigo())) {
+        	tb.add(Box.createHorizontalGlue());
+            tb.add(crearBoton("REPORTES", "/com/adminHotel/gui/complements/report.png", e -> abrirAdminInformes()));
+        }
+        
+        if (SesionUsuario.tienePermiso(ModuloEnum.CONFIG_HOTEL.getCodigo())) {
+        	tb.add(Box.createHorizontalGlue());
+            tb.add(crearBoton("CONFIGURACIONES", "/com/adminHotel/gui/complements/config.png", e -> abrirAdminConfigParams()));
+        }
+
         // Espacio para empujar el perfil a la derecha
         tb.add(Box.createHorizontalGlue());
         tb.add(crearBoton("SALIR", "/com/adminHotel/gui/complements/exit.png", e -> System.exit(0)));
@@ -102,7 +108,7 @@ public class MainFrame extends JFrame {
     			btn.setIcon(new ImageIcon(url));
     		}
         } catch (Exception e) {
-            System.err.println("No se encontró el icono: " + iconName);
+            System.err.println("No se encontr? el icono: " + iconName);
         }
 
         btn.setToolTipText(texto);
@@ -111,7 +117,7 @@ public class MainFrame extends JFrame {
         btn.setFocusable(false);
         btn.addActionListener(accion);
         
-        // Propiedad específica de Substance para botones planos en Toolbar
+        // Propiedad espec?fica de Substance para botones planos en Toolbar
         btn.putClientProperty("substancelaf.buttonFlat", Boolean.TRUE);
         
         return btn;
@@ -120,12 +126,6 @@ public class MainFrame extends JFrame {
     private JPanel crearStatusBar() {
     	JPanel panel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createEtchedBorder());
-        
-        /*JLabel lblUser = new JLabel("CONECTADO: " + SesionUsuario.getNombreUsuario().toUpperCase());
-        lblUser.setFont(new Font("Arial", Font.ITALIC, 12));
-        lblUser.setForeground(new Color(50, 50, 50));*/
-        
-        //panel.add(lblUser);
         return panel;
     }
     
@@ -141,76 +141,19 @@ public class MainFrame extends JFrame {
     	DesktopController.abrirAdminProductos();
     }
 
-    private JMenuBar crearMenu() {
-
-        JMenuBar menuBar = new JMenuBar();
-
-        // MENÚ PRINCIPAL
-        JMenu menuSistema = new JMenu("Sistema");
-        menuSistema.setFont(fuenteMenu);
-
-        // SUBMENÚ CLIENTES
-        JMenu menuClientes = new JMenu("Clientes");
-        menuClientes.setFont(fuenteMenu);
-        JMenuItem itemClientes = new JMenuItem("Administrar Clientes");
-        itemClientes.setFont(fuenteMenu);
-        itemClientes.addActionListener(e ->
-                DesktopController.abrirCliente()
-        );
-        menuClientes.add(itemClientes);
-
-        // SUBMENÚ HABITACIONES
-        JMenu menuHabitaciones = new JMenu("Habitaciones");
-        menuHabitaciones.setFont(fuenteMenu);
-        JMenuItem itemHabitaciones = new JMenuItem("Administrar Habitaciones");
-        itemHabitaciones.setFont(fuenteMenu);
-        itemHabitaciones.addActionListener(e ->
-                DesktopController.abrirHabitacion()
-        );
-        menuHabitaciones.add(itemHabitaciones);
-
-        // SALIR
-        JMenuItem itemSalir = new JMenuItem("Salir");
-        itemSalir.setFont(fuenteMenu);
-        itemSalir.addActionListener(e -> System.exit(0));
-
-        // ARMADO DEL MENÚ
-        menuSistema.add(menuClientes);
-        menuSistema.add(menuHabitaciones);
-        menuSistema.addSeparator();
-        menuSistema.add(itemSalir);
-        
-        // --- NUEVO: MENÚ MOSTRADOR (Ventas Rápidas) ---
-        JMenu menuMostrador = new JMenu("Mostrador");
-        menuMostrador.setFont(fuenteMenu);
-
-        JMenuItem itemVentaMostrador = new JMenuItem("Nueva Venta Mostrador");
-        itemVentaMostrador.setFont(fuenteMenu);
-        itemVentaMostrador.addActionListener(e -> {
-            // Aquí llamarás al DesktopController para abrir la ventana de venta
-            DesktopController.abrirVentaMostrador();
-        });
-
-        menuMostrador.add(itemVentaMostrador);
-        
-     // --- NUEVO: MENÚ INVENTARIO (Administración) ---
-        JMenu menuInventario = new JMenu("Inventario");
-        menuInventario.setFont(fuenteMenu);
-
-        JMenuItem itemAdminProductos = new JMenuItem("Administrar Productos");
-        itemAdminProductos.setFont(fuenteMenu);
-        itemAdminProductos.addActionListener(e -> {
-            // Aquí llamarás al DesktopController para abrir el CRUD de productos
-            DesktopController.abrirAdminProductos();
-        });
-
-        menuInventario.add(itemAdminProductos);
-
-        // --- ARMADO FINAL ---
-        menuBar.add(menuSistema);
-        menuBar.add(menuMostrador);
-        menuBar.add(menuInventario);
-
-        return menuBar;
+    private void abrirConsumibles() {
+        DesktopController.abrirAdminConsumibles();
+    }
+    
+    private void abrirCajaRegistradora() {
+    	DesktopController.abrirCajaRegistradora();
+    }
+    
+    private void abrirAdminInformes() {
+    	DesktopController.abrirAdminInformes();
+    }
+    
+    private void abrirAdminConfigParams() {
+    	DesktopController.abrirAdminConfigParams();
     }
 }

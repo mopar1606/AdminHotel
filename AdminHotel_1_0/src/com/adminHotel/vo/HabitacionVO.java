@@ -4,16 +4,9 @@ import java.math.BigDecimal;
 
 public class HabitacionVO {
 
-    private Integer idHabitacion;
-    private Integer numeroHabitacion;
-    private Integer piso;
-    private String descripcion;
-    private Integer idTipoHabitacion;
-    private Integer idEstadoHabitacion;
-    private Integer idEstadoRegistro;
-    private String estadoDescripcion;
-    private String tipoDescripcion;
-    private BigDecimal precio; 
+    private Integer idHabitacion, numeroHabitacion, piso, idTipoHabitacion, idEstadoHabitacion, idEstadoRegistro;
+    private String descripcion, estadoDescripcion, tipoDescripcion;
+    private BigDecimal precioSencilla, precioDoble, precioTres; 
 
     public Integer getIdHabitacion() {
         return idHabitacion;
@@ -87,11 +80,27 @@ public class HabitacionVO {
         this.tipoDescripcion = tipoDescripcion;
     }
 
-	public BigDecimal getPrecio() {
-		return precio;
+	public BigDecimal getPrecioSencilla() {
+		return precioSencilla;
 	}
 
-	public void setPrecio(BigDecimal precio) {
-		this.precio = precio;
+	public void setPrecioSencilla(BigDecimal precioSencilla) {
+		this.precioSencilla = precioSencilla;
+	}
+
+	public BigDecimal getPrecioDoble() {
+		return precioDoble;
+	}
+
+	public void setPrecioDoble(BigDecimal precioDoble) {
+		this.precioDoble = precioDoble;
+	}
+
+	public BigDecimal getPrecioTres() {
+		return precioTres;
+	}
+
+	public void setPrecioTres(BigDecimal precioTres) {
+		this.precioTres = precioTres;
 	}
 }

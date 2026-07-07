@@ -28,33 +28,39 @@ public class LoginDialog extends JDialog {
     private JButton btnEntrar, btnSalir;
     private boolean autenticado = false;
     private Font fuente = new Font("Arial", Font.BOLD, 20);
+    private Font fuenteBorder = new Font("Arial", Font.BOLD, 16);
     
     public LoginDialog(Frame parent) {
         super(parent, "HOTEL LAS TERRAZAS II - Acceso al Sistema", true);
         setSize(400, 300);
         setLocationRelativeTo(null);
-        setUndecorated(true); // Estilo limpio sin bordes de Windows
+        setUndecorated(true);
         
         JPanel panel = new JPanel(new GridLayout(5, 1, 10, 10));
         panel.setBorder(BorderFactory.createLineBorder(new Color(41, 128, 185), 2));
         panel.setBackground(Color.WHITE);
 
-        JLabel lblTitulo = new JLabel("INICIO DE SESIÓN", JLabel.CENTER);
+        JLabel lblTitulo = new JLabel("INICIO DE SESION", JLabel.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
         lblTitulo.setForeground(new Color(41, 128, 185));
 
         txtUsuario = new JTextField();
         txtUsuario.setFont(fuente);
-        txtUsuario.setBorder(BorderFactory.createTitledBorder("Usuario"));
+        
+        txtUsuario.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                "USUARIO", 0, 0, fuenteBorder, new Color(41, 128, 185)));
 
         txtClave = new JPasswordField();
         txtClave.setFont(fuente);
-        txtClave.setBorder(BorderFactory.createTitledBorder("Contraseña"));
+        txtClave.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                "CONTRASEÃ‘A", 0, 0, fuenteBorder, new Color(41, 128, 185)));
 
         btnEntrar = new JButton("ENTRAR");
         btnEntrar.setFont(fuente);
         btnEntrar.setBackground(new Color(46, 204, 113));
-        btnEntrar.setForeground(Color.WHITE);
+        btnEntrar.setForeground(Color.BLACK);
 
         btnSalir = new JButton("CANCELAR");
         btnSalir.setFont(fuente);
@@ -84,16 +90,16 @@ public class LoginDialog extends JDialog {
             UsuarioVO vo = dao.validar(user, pass);
 
             if (vo != null) {
-                // GUARDAMOS EN LA SESIÓN GLOBAL
+                // GUARDAMOS EN LA SESIï¿½N GLOBAL
                 SesionUsuario.iniciarSesion(vo.getIdUsuario(), vo.getNombreCompleto(), vo.getPermisos());
-                dao.registrarAuditoria(vo.getIdUsuario(), "LOGIN", "usuario", "El usuario [" + vo.getNombreCompleto() + "] inició sesión en el sistema");
+                dao.registrarAuditoria(vo.getIdUsuario(), "LOGIN", "usuario", "El usuario [" + vo.getNombreCompleto() + "] iniciï¿½ sesiï¿½n en el sistema");
                 autenticado = true;
                 dispose(); // Cerramos el login
             } else {
                 JOptionPane.showMessageDialog(this, "Usuario o Clave incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error de conexión: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error de conexiï¿½n: " + e.getMessage());
         }
     }
 

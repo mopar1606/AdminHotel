@@ -18,7 +18,7 @@ public class ProductoDAO {
         this.cn = cn;
     }
     
- // Para llenar el Combo o la Tabla de ventas
+    // Para llenar el Combo o la Tabla de ventas
     public List<ProductoVO> listarActivos() throws Exception {
         List<ProductoVO> lista = new ArrayList<>();
         String sql = "SELECT id_producto, nombre, precio_venta, stock, codigo_barras FROM producto WHERE id_estado_registro = 1 AND stock > 0";
@@ -37,13 +37,13 @@ public class ProductoDAO {
         return lista;
     }
     
- // MÉTODO CRÍTICO: Descontar stock
+    // Mï¿½TODO CRï¿½TICO: Descontar stock
     public void descontarStock(int idProducto, int cantidad) throws Exception {
         String sql = "UPDATE producto SET stock = stock - ? WHERE id_producto = ? AND stock >= ?";
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setInt(1, cantidad);
             ps.setInt(2, idProducto);
-            ps.setInt(3, cantidad); // Validación extra para no quedar en negativo
+            ps.setInt(3, cantidad); // Validaciï¿½n extra para no quedar en negativo
             
             int filasAff = ps.executeUpdate();
             if (filasAff == 0) {
@@ -52,6 +52,7 @@ public class ProductoDAO {
         }
     }
     
+    //Para insertar un producto nuevo
     public int insertar(ProductoVO p) throws Exception {
         // 1. SQL con los campos de tu tabla producto
         String sql = "INSERT INTO producto (nombre, precio_compra, precio_venta, stock, id_estado_registro, codigo_barras) "
@@ -60,7 +61,7 @@ public class ProductoDAO {
         // 2. Usamos RETURN_GENERATED_KEYS para obtener el ID asignado
         try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            ps.setString(1, p.getNombre().toUpperCase().trim()); // Normalizamos a mayúsculas
+            ps.setString(1, p.getNombre().toUpperCase().trim()); // Normalizamos a mayï¿½sculas
             ps.setBigDecimal(2, p.getPrecioCompra());
             ps.setBigDecimal(3, p.getPrecioVenta());
             ps.setInt(4, p.getStock());
@@ -74,7 +75,7 @@ public class ProductoDAO {
             try {
                 ps.executeUpdate();
             } catch (SQLException e) {
-                if (e.getErrorCode() == 1062) { // Código MySQL para Duplicate Entry
+                if (e.getErrorCode() == 1062) { // Cï¿½digo MySQL para Duplicate Entry
                     throw new Exception("El producto '" + p.getNombre() + "' ya existe en el sistema.");
                 }
                 throw e;
@@ -92,6 +93,7 @@ public class ProductoDAO {
         throw new Exception("No se pudo registrar el producto.");
     }
     
+    //Validar producto por nombre
     public boolean existeProducto(String nombre) throws Exception {
         String sql = "SELECT COUNT(*) FROM producto WHERE nombre = ?";
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
@@ -137,7 +139,7 @@ public class ProductoDAO {
      * Actualiza los datos de un producto (Nombre, Precios, Estado).
      */
     public boolean actualizar(ProductoVO p) throws Exception {
-        String sql = "UPDATE producto SET nombre = ?, precio_compra = ?, precio_venta = ?, id_estado_registro = ?,  codigo_barras = ?" +
+        String sql = "UPDATE producto SET nombre = ?, precio_compra = ?, precio_venta = ?, id_estado_registro = ?,  codigo_barras = ? " +
                      "WHERE id_producto = ?";
 
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
@@ -158,11 +160,11 @@ public class ProductoDAO {
     }
 
     /**
-     * Ajuste de Stock (Entrada de Mercancía).
+     * Ajuste de Stock (Entrada de Mercancï¿½a).
      * Suma la cantidad recibida al stock actual.
      */
     public boolean sumarStock(int idProducto, int cantidadRecibida) throws Exception {
-        // SQL que suma al valor actual (atómico para evitar errores de concurrencia)
+        // SQL que suma al valor actual (atï¿½mico para evitar errores de concurrencia)
         String sql = "UPDATE producto SET stock = stock + ? WHERE id_producto = ?";
 
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
@@ -173,15 +175,18 @@ public class ProductoDAO {
         }
     }
     
+    //Busqueda por codigo de barras desde pistola laser
     public ProductoVO buscarPorCodigo(String codigo) throws Exception {
         String sql = "SELECT * FROM producto WHERE codigo_barras = ? AND id_estado_registro = 1";
         try (PreparedStatement ps = cn.prepareStatement(sql)) {
             ps.setString(1, codigo);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                	
                     ProductoVO p = new ProductoVO();
                     p.setIdProducto(rs.getInt("id_producto"));
                     p.setNombre(rs.getString("nombre"));
+                    p.setPrecioCompra(rs.getBigDecimal("precio_compra"));
                     p.setPrecioVenta(rs.getBigDecimal("precio_venta"));
                     p.setStock(rs.getInt("stock"));
                     p.setCodigoBarras(rs.getString("codigo_barras"));
@@ -191,4 +196,6 @@ public class ProductoDAO {
         }
         return null;
     }
+    
+    
 }

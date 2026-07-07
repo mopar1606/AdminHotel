@@ -5,13 +5,10 @@ import java.util.Date;
 
 public class VentaVO {
 
-    private Integer idVenta;
-    private Integer idCliente;
+    private Integer idVenta,idCliente,idHabitacion, idEstadoRegistro, idConceptoVenta;
     private Date fecha;
     private BigDecimal total;
     private String observacion;
-    private Integer idEstadoRegistro;
-    private Integer idConceptoVenta;
 
     public Integer getIdVenta() {
         return idVenta;
@@ -67,5 +64,13 @@ public class VentaVO {
 
 	public void setIdConceptoVenta(Integer idConceptoVenta) {
 		this.idConceptoVenta = idConceptoVenta;
+	}
+
+	public Integer getIdHabitacion() {
+		return idHabitacion;
+	}
+
+	public void setIdHabitacion(Integer idHabitacion) {
+		this.idHabitacion = idHabitacion;
 	}
 }

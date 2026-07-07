@@ -1,11 +1,12 @@
 package com.adminHotel.util;
 
 public enum EstadoHabitacionEnum {
-	
-	DISPONIBLE(1),
+
+    DISPONIBLE(1),
     OCUPADA(2),
     POR_ASEO(3),
-    NO_DISPONIBLE(4);
+    NO_DISPONIBLE(4),
+    RESERVADA(5);
 
     private final int codigo;
 
@@ -23,6 +24,6 @@ public enum EstadoHabitacionEnum {
                 return e;
             }
         }
-        throw new IllegalArgumentException("CÛdigo inv·lido: " + codigo);
+        throw new IllegalArgumentException("C√≥digo inv√°lido: " + codigo);
     }
 }

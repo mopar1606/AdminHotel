@@ -17,8 +17,8 @@ public class PagoDAO {
     
     public Integer insertar(PagoVO pago) throws Exception {
 
-        String sql = "INSERT INTO pago(id_venta, id_metodo, valor, id_estado_registro) "
-                   + "VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO pago(id_venta, id_metodo, valor, id_estado_registro, fecha, id_turno_caja) "
+                   + "VALUES (?, ?, ?, ?, NOW(), ?)";
 
         try (PreparedStatement ps = cn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -27,15 +27,22 @@ public class PagoDAO {
             ps.setBigDecimal(3, pago.getValor());
             ps.setInt(4, pago.getIdEstadoRegistro());
 
+            if (pago.getIdTurnoCaja() != null) {
+                ps.setInt(5, pago.getIdTurnoCaja());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
+
             ps.executeUpdate();
-            
+
             try (ResultSet rs = ps.getGeneratedKeys()) {
-	            if (rs.next()) {
-	                return rs.getInt(1);
-	            }
-	        }
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
         }
-        
+
         throw new Exception("No se pudo crear el pago");
     }
+
 }

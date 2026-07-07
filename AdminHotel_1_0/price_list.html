@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Precios - Hotel Las Terrazas II</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@300;400;700&display=swap');
+
+        :root {
+            --gold: #d4af37;
+            --light-gold: #f1d592;
+            --dark-gold: #aa8c2c;
+            --black: #0c0c0c;
+            --dark-grey: #1a1a1a;
+            --text-grey: #e0e0e0;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--text-grey);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 850px;
+            background: linear-gradient(135deg, #111 0%, #050505 100%);
+            border: 1px solid var(--gold);
+            outline: 4px double var(--dark-gold);
+            outline-offset: -12px;
+            padding: 50px;
+            position: relative;
+            box-shadow: 0 0 60px rgba(212, 175, 55, 0.15), inset 0 0 100px rgba(0,0,0,0.5);
+        }
+
+        /* Decorative corners */
+        .container::before, .container::after {
+            content: "";
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--gold);
+            z-index: 10;
+        }
+        .container::before { top: 20px; left: 20px; border-right: 0; border-bottom: 0; }
+        .container::after { bottom: 20px; right: 20px; border-left: 0; border-top: 0; }
+
+        header {
+            text-align: center;
+            margin-bottom: 45px;
+            border-bottom: 3px double var(--gold);
+            padding-bottom: 25px;
+            position: relative;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 46px; /* Increased 4px total for impact */
+            margin: 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        header p {
+            color: var(--light-gold);
+            font-size: 20px; /* Increased 2px */
+            font-style: italic;
+            margin: 10px 0 0 0;
+            letter-spacing: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px; /* Increased 2px */
+        }
+
+        thead th {
+            background: linear-gradient(to bottom, var(--gold), var(--dark-gold));
+            color: black;
+            padding: 14px 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-weight: 700;
+            border: 1px solid var(--black);
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+        }
+
+        .room-num {
+            color: var(--gold);
+            font-weight: 700;
+            width: 60px;
+        }
+
+        .room-desc {
+            font-weight: 300;
+            max-width: 420px;
+        }
+
+        .price {
+            text-align: right;
+            font-weight: 700;
+            color: #fff;
+            width: 90px;
+        }
+
+        .currency {
+            color: var(--gold);
+            margin-right: 5px;
+        }
+
+        .footer-table {
+            margin-top: 40px;
+            border-top: 3px double var(--gold);
+            padding-top: 25px;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            font-weight: 700;
+            font-size: 18px; /* Highlighting footer data */
+            letter-spacing: 1px;
+        }
+
+        .footer-row span:last-child {
+            color: #fff;
+        }
+        
+        .empty-price {
+            text-align: center;
+            color: #444;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Hotel LAS TERRAZAS II</h1>
+        <p>Confortables Habitaciones</p>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th colspan="2">HABITACIÓN</th>
+                <th style="text-align:right">1 PERSONA</th>
+                <th style="text-align:right">2 PERSONAS</th>
+                <th style="text-align:right">3 PERSONAS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="room-num">101</td>
+                <td class="room-desc">DOS CAMAS UNA DOBLE Y UNA SENCILLA BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="price"><span class="currency">$</span>60.000</td>
+                <td class="price"><span class="currency">$</span>70.000</td>
+            </tr>
+            <tr>
+                <td class="room-num">102</td>
+                <td class="room-desc">UNA CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">103</td>
+                <td class="room-desc">UNA CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">104</td>
+                <td class="room-desc">UNA CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">105</td>
+                <td class="room-desc">UNA CAMA DOBLE BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>30.000</td>
+                <td class="empty-price">-</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">106</td>
+                <td class="room-desc">UNA CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">201</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">202</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">203</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">204</td>
+                <td class="room-desc">CAMA SENCILLA BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>30.000</td>
+                <td class="empty-price">-</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">205</td>
+                <td class="room-desc">DOBLE CAMA SENCILLA BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>45.000</td>
+                <td class="price"><span class="currency">$</span>55.000</td>
+                <td class="price"><span class="currency">$</span>65.000</td>
+            </tr>
+            <tr>
+                <td class="room-num">206</td>
+                <td class="room-desc">CAMA DOBLE BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>30.000</td>
+                <td class="empty-price">-</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">207</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>40.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">208</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>40.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">301</td>
+                <td class="room-desc">CAMA DOBLE BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>33.000</td>
+                <td class="price"><span class="currency">$</span>43.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">302</td>
+                <td class="room-desc">CAMA SENCILLA BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>30.000</td>
+                <td class="empty-price">-</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">303</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">304</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">305</td>
+                <td class="room-desc">CAMA DOBLE BANO COMPARTIDO</td>
+                <td class="price"><span class="currency">$</span>30.000</td>
+                <td class="empty-price">-</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">306</td>
+                <td class="room-desc">CAMA DOBLE Y CAMA SENCILLA BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="price"><span class="currency">$</span>60.000</td>
+                <td class="price"><span class="currency">$</span>70.000</td>
+            </tr>
+            <tr>
+                <td class="room-num">307</td>
+                <td class="room-desc">CAMA DOBLE Y CAMA SENCILLA BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="price"><span class="currency">$</span>60.000</td>
+                <td class="price"><span class="currency">$</span>70.000</td>
+            </tr>
+            <tr>
+                <td class="room-num">401</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">403</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>40.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">404</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="price"><span class="currency">$</span>60.000</td>
+                <td class="price"><span class="currency">$</span>70.000</td>
+            </tr>
+            <tr>
+                <td class="room-num">405</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>35.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">406</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>40.000</td>
+                <td class="price"><span class="currency">$</span>50.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">501</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>45.000</td>
+                <td class="price"><span class="currency">$</span>55.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">502</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>45.000</td>
+                <td class="price"><span class="currency">$</span>55.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+            <tr>
+                <td class="room-num">503</td>
+                <td class="room-desc">CAMA DOBLE BANO PRIVADO</td>
+                <td class="price"><span class="currency">$</span>45.000</td>
+                <td class="price"><span class="currency">$</span>55.000</td>
+                <td class="empty-price">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-table">
+        <div class="footer-row">
+            <span>RATO 2 HORAS</span>
+            <span><span class="currency">$</span> 30.000</span>
+        </div>
+        <div class="footer-row">
+            <span>ADICIONAL (POR PERSONA)</span>
+            <span><span class="currency">$</span> 15.000</span>
+        </div>
+        <div class="footer-row">
+            <span>DUCHA</span>
+            <span><span class="currency">$</span> 13.000</span>
+        </div>
+        <div class="footer-row">
+            <span>BAÑO</span>
+            <span><span class="currency">$</span> 2.000</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

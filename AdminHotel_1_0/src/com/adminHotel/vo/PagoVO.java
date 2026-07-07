@@ -13,6 +13,7 @@ public class PagoVO {
     private Integer idEstadoRegistro;
     private Integer idCliente;
     private Integer idHabitacion;
+    private Integer idTurnoCaja;
 
     public Integer getIdPago() {
         return idPago;
@@ -76,5 +77,13 @@ public class PagoVO {
 
 	public void setIdHabitacion(Integer idHabitacion) {
 		this.idHabitacion = idHabitacion;
+	}
+
+	public Integer getIdTurnoCaja() {
+		return idTurnoCaja;
+	}
+
+	public void setIdTurnoCaja(Integer idTurnoCaja) {
+		this.idTurnoCaja = idTurnoCaja;
 	}
 }

@@ -8,10 +8,12 @@ services:
       MYSQL_DATABASE: hotel_db
       MYSQL_USER: hotel_user
       MYSQL_PASSWORD: hotel_pass
+      TZ: America/Bogota
     ports:
       - "3306:3306"
     volumes:
-      - mysql_hotel_data:/var/lib/mysql
+      - configs_mysql_hotel_data:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
 
   adminer:
     image: adminer
@@ -21,4 +23,5 @@ services:
       - "8080:8080"
 
 volumes:
-  mysql_hotel_data:
+  configs_mysql_hotel_data:
+    external: true

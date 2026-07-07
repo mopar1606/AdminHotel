@@ -5,7 +5,10 @@ public enum ModuloEnum {
 	INVENTARIO(1),
 	CONTROL_HABITACIONES(2),
 	VENTAS_VITRINA(3),
-	ADMIN_USUARIOS(4);
+	ADMIN_USUARIOS(4),
+	CONSUMIBLES(5),
+	REPORTS(6),
+	CONFIG_HOTEL(7);
 
     private final int codigo;
 
@@ -23,6 +26,6 @@ public enum ModuloEnum {
                 return e;
             }
         }
-        throw new IllegalArgumentException("CÛdigo inv·lido: " + codigo);
+        throw new IllegalArgumentException("C√≥digo inv√°lido: " + codigo);
     }
 }
